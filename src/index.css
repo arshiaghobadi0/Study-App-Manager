@@ -1,8 +1,13 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   html {
     font-family: 'Vazirmatn', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   .font-mono-nums {
@@ -21,9 +26,11 @@
 }
 
 @media print {
+  html,
   body {
     background: #ffffff !important;
     color: #0f172a !important;
+    color-scheme: light !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

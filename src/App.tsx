@@ -1,4 +1,4 @@
-import { Bell, ChevronLeft, ChevronRight, Plus, Printer, RotateCcw, Search } from 'lucide-react';
+import { Bell, ChevronLeft, ChevronRight, Moon, Plus, Printer, RotateCcw, Search, Sun } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PrintableWeekSheet } from './components/PrintableWeekSheet';
 import { PrintScheduleModal } from './components/PrintScheduleModal';
@@ -27,6 +27,13 @@ import {
   getDueReminderTasks,
   sortTasksForDay,
 } from './utils/tasks';
+import {
+  applyThemeToDocument,
+  getNextTheme,
+  loadTheme,
+  saveTheme,
+  type ThemeMode,
+} from './utils/theme';
 
 function generateId(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -55,6 +62,7 @@ export default function App() {
     includeCompleted: true,
     includeNotes: true,
   });
+  const [theme, setTheme] = useState<ThemeMode>(() => loadTheme());
 
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
@@ -66,6 +74,11 @@ export default function App() {
 
   const announcedIdsRef = useRef<Set<string>>(new Set());
   const userInteractedRef = useRef(false);
+
+  useEffect(() => {
+    applyThemeToDocument(theme);
+    saveTheme(theme);
+  }, [theme]);
 
   useEffect(() => {
     const markInteracted = () => {
@@ -344,21 +357,21 @@ export default function App() {
 
   return (
     <>
-      <div className="min-h-screen bg-slate-50 text-slate-900 print:hidden">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-8">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 print:hidden">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 sm:gap-8">
           <a
             href="#top"
-            className="text-base sm:text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0"
+            className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0"
           >
             برنامه‌ریز درسی هفتگی
           </a>
 
-          <nav aria-label="ناوبری هفته" className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <nav aria-label="ناوبری هفته" className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-300">
             <button
               type="button"
               onClick={() => setWeekOffset((w) => w - 1)}
-              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
               هفته قبل
             </button>
@@ -366,7 +379,9 @@ export default function App() {
               type="button"
               onClick={() => setWeekOffset(0)}
               className={`transition-colors whitespace-nowrap shrink-0 ${
-                weekOffset === 0 ? 'text-blue-700 font-semibold' : 'hover:text-slate-900'
+                weekOffset === 0
+                  ? 'text-blue-700 dark:text-blue-400 font-semibold'
+                  : 'hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               هفته جاری
@@ -374,46 +389,62 @@ export default function App() {
             <button
               type="button"
               onClick={() => setWeekOffset((w) => w + 1)}
-              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
               هفته بعد
             </button>
             <button
               type="button"
               onClick={() => setSubjectModalOpen(true)}
-              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
               مدیریت درس‌ها
             </button>
           </nav>
 
-          <button
-            type="button"
-            onClick={() => handleOpenNewModal(todayISO)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-          >
-            <Plus className="w-4 h-4" aria-hidden="true" />
-            افزودن تکلیف
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setTheme((prev) => getNextTheme(prev))}
+              aria-label={theme === 'dark' ? 'تغییر به حالت روشن' : 'تغییر به حالت تاریک'}
+              title={theme === 'dark' ? 'حالت روشن' : 'حالت تاریک'}
+              className="inline-flex items-center justify-center p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-400" aria-hidden="true" />
+              ) : (
+                <Moon className="w-4 h-4 text-slate-700" aria-hidden="true" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleOpenNewModal(todayISO)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+            >
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              افزودن تکلیف
+            </button>
+          </div>
         </div>
       </header>
 
       <main id="top" className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        <section aria-label="خلاصه هفته و تاریخ" className="bg-white border border-slate-200 rounded-xl p-5 space-y-5">
+        <section aria-label="خلاصه هفته و تاریخ" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tabular-nums">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                   {weekSpan.jalaliSpan}
                 </h1>
-                <span aria-hidden="true" className="text-slate-300">
+                <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
                   /
                 </span>
-                <span dir="ltr" className="text-sm font-mono-nums text-slate-500">
+                <span dir="ltr" className="text-sm font-mono-nums text-slate-500 dark:text-slate-400">
                   {weekSpan.gregorianSpan}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 flex flex-wrap items-center gap-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-2">
                 <span>امروز: {formatJalaliLong(todayJalali)}</span>
                 <span aria-hidden="true">·</span>
                 <span dir="ltr" className="font-mono-nums">
@@ -423,19 +454,19 @@ export default function App() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg md:hidden">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg md:hidden">
                 <button
                   type="button"
                   onClick={() => setWeekOffset((w) => w - 1)}
                   aria-label="هفته قبل"
-                  className="p-1.5 text-slate-700 hover:bg-white rounded-md transition-colors"
+                  className="p-1.5 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors"
                 >
                   <ChevronRight className="w-4 h-4" aria-hidden="true" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setWeekOffset(0)}
-                  className="px-2.5 py-1 text-xs font-medium text-slate-800 hover:bg-white rounded-md transition-colors whitespace-nowrap"
+                  className="px-2.5 py-1 text-xs font-medium text-slate-800 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors whitespace-nowrap"
                 >
                   هفته جاری
                 </button>
@@ -443,7 +474,7 @@ export default function App() {
                   type="button"
                   onClick={() => setWeekOffset((w) => w + 1)}
                   aria-label="هفته بعد"
-                  className="p-1.5 text-slate-700 hover:bg-white rounded-md transition-colors"
+                  className="p-1.5 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" aria-hidden="true" />
                 </button>
@@ -452,7 +483,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setSubjectModalOpen(true)}
-                className="md:hidden px-3 py-1.5 text-xs font-medium bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 whitespace-nowrap"
+                className="md:hidden px-3 py-1.5 text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 whitespace-nowrap"
               >
                 مدیریت درس‌ها
               </button>
@@ -460,7 +491,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setPrintModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-white border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors whitespace-nowrap shrink-0"
               >
                 <Printer className="w-3.5 h-3.5" aria-hidden="true" />
                 چاپ / ذخیره PDF
@@ -473,8 +504,8 @@ export default function App() {
                   disabled={notificationPermission === 'granted'}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap shrink-0 ${
                     notificationPermission === 'granted'
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800 cursor-default'
-                      : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 cursor-default'
+                      : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                   }`}
                 >
                   <Bell className="w-3.5 h-3.5" aria-hidden="true" />
@@ -484,28 +515,28 @@ export default function App() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-slate-200 pt-4">
-            <div className="border-b border-l sm:border-b-0 border-slate-200 pb-3 pl-4 sm:py-0">
-              <p className="text-xs text-slate-500">کل تکالیف هفته</p>
-              <p className="text-2xl font-bold text-slate-900 tabular-nums mt-0.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-slate-200 dark:border-slate-800 pt-4">
+            <div className="border-b border-l sm:border-b-0 border-slate-200 dark:border-slate-800 pb-3 pl-4 sm:py-0">
+              <p className="text-xs text-slate-500 dark:text-slate-400">کل تکالیف هفته</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums mt-0.5">
                 {toPersianDigits(weeklyStats.total)}
               </p>
             </div>
-            <div className="border-b sm:border-b-0 sm:border-l border-slate-200 pb-3 pr-4 sm:py-0 sm:px-4">
-              <p className="text-xs text-slate-500">تکمیل‌شده</p>
-              <p className="text-2xl font-bold text-emerald-700 tabular-nums mt-0.5">
+            <div className="border-b sm:border-b-0 sm:border-l border-slate-200 dark:border-slate-800 pb-3 pr-4 sm:py-0 sm:px-4">
+              <p className="text-xs text-slate-500 dark:text-slate-400">تکمیل‌شده</p>
+              <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums mt-0.5">
                 {toPersianDigits(weeklyStats.completed)}
               </p>
             </div>
-            <div className="border-l border-slate-200 pt-3 pl-4 sm:py-0 sm:px-4">
-              <p className="text-xs text-slate-500">باقی‌مانده</p>
-              <p className="text-2xl font-bold text-slate-900 tabular-nums mt-0.5">
+            <div className="border-l border-slate-200 dark:border-slate-800 pt-3 pl-4 sm:py-0 sm:px-4">
+              <p className="text-xs text-slate-500 dark:text-slate-400">باقی‌مانده</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums mt-0.5">
                 {toPersianDigits(weeklyStats.pending)}
               </p>
             </div>
             <div className="pt-3 pr-4 sm:py-0 sm:pr-4">
-              <p className="text-xs text-slate-500">یادآورهای فعال</p>
-              <p className="text-2xl font-bold text-blue-700 tabular-nums mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400">یادآورهای فعال</p>
+              <p className="text-2xl font-bold text-blue-700 dark:text-blue-400 tabular-nums mt-0.5">
                 {toPersianDigits(weeklyStats.activeReminders)}
               </p>
             </div>
@@ -520,11 +551,11 @@ export default function App() {
           onDismiss={handleDismissReminder}
         />
 
-        <section aria-label="فیلتر و جستجو" className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+        <section aria-label="فیلتر و جستجو" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
           <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
             <div className="relative flex-1 min-w-0">
               <Search
-                className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
                 aria-hidden="true"
               />
               <input
@@ -533,7 +564,7 @@ export default function App() {
                 onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
                 placeholder="جستجو در عنوان یا یادداشت تکالیف..."
                 aria-label="جستجو در تکالیف"
-                className="w-full pr-9 pl-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                className="w-full pr-9 pl-3 py-2 text-sm bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-slate-200 dark:border-slate-700 rounded-lg focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
               />
             </div>
 
@@ -541,7 +572,7 @@ export default function App() {
               value={filters.subjectId}
               onChange={(e) => setFilters((prev) => ({ ...prev, subjectId: e.target.value }))}
               aria-label="فیلتر بر اساس درس"
-              className="lg:max-w-[170px] truncate px-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="lg:max-w-[170px] truncate px-3 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               <option value="all">همه درس‌ها</option>
               {subjects.map((sub) => (
@@ -551,7 +582,7 @@ export default function App() {
               ))}
             </select>
 
-            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg shrink-0" role="group" aria-label="فیلتر اولویت">
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0" role="group" aria-label="فیلتر اولویت">
               {(
                 [
                   { value: 'all', label: 'همه اولویت‌ها' },
@@ -566,8 +597,8 @@ export default function App() {
                   onClick={() => setFilters((prev) => ({ ...prev, priority: item.value }))}
                   className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
                     filters.priority === item.value
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                   }`}
                 >
                   {item.label}
@@ -575,7 +606,7 @@ export default function App() {
               ))}
             </div>
 
-            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg shrink-0" role="group" aria-label="فیلتر وضعیت">
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0" role="group" aria-label="فیلتر وضعیت">
               {(
                 [
                   { value: 'all', label: 'همه' },
@@ -589,8 +620,8 @@ export default function App() {
                   onClick={() => setFilters((prev) => ({ ...prev, completion: item.value }))}
                   className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
                     filters.completion === item.value
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                   }`}
                 >
                   {item.label}
@@ -602,7 +633,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={resetFilters}
-                className="inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors whitespace-nowrap shrink-0"
               >
                 <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
                 پاک کردن فیلترها
@@ -612,8 +643,8 @@ export default function App() {
         </section>
 
         {hasActiveFilters && totalMatchingInWeek === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-10 text-center space-y-3">
-            <p className="text-sm font-medium text-slate-700">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-10 text-center space-y-3">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
               در این هفته هیچ تکلیفی مطابق فیلترهای انتخاب‌شده یافت نشد.
             </p>
             <button

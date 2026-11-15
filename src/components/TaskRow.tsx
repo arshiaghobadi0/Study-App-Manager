@@ -15,7 +15,7 @@ interface TaskRowProps {
 function PriorityIndicator({ priority, completed }: { priority: PriorityLevel; completed: boolean }) {
   if (completed) {
     return (
-      <span className="inline-flex items-center gap-1 text-slate-400">
+      <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500">
         <Minus className="w-3 h-3" aria-hidden="true" />
         <span>{PRIORITY_LABELS[priority]}</span>
       </span>
@@ -24,7 +24,7 @@ function PriorityIndicator({ priority, completed }: { priority: PriorityLevel; c
 
   if (priority === 'high') {
     return (
-      <span className="inline-flex items-center gap-1 text-rose-700 font-medium">
+      <span className="inline-flex items-center gap-1 text-rose-700 dark:text-rose-400 font-medium">
         <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" />
         <span>{PRIORITY_LABELS.high}</span>
       </span>
@@ -33,7 +33,7 @@ function PriorityIndicator({ priority, completed }: { priority: PriorityLevel; c
 
   if (priority === 'medium') {
     return (
-      <span className="inline-flex items-center gap-1 text-amber-700 font-medium">
+      <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-medium">
         <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
         <span>{PRIORITY_LABELS.medium}</span>
       </span>
@@ -41,7 +41,7 @@ function PriorityIndicator({ priority, completed }: { priority: PriorityLevel; c
   }
 
   return (
-    <span className="inline-flex items-center gap-1 text-slate-600">
+    <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400">
       <Minus className="w-3.5 h-3.5" aria-hidden="true" />
       <span>{PRIORITY_LABELS.low}</span>
     </span>
@@ -58,8 +58,8 @@ export function TaskRow({
 }: TaskRowProps) {
   return (
     <div
-      className={`group flex items-start justify-between gap-3 py-3 px-4 transition-colors hover:bg-slate-50/80 ${
-        task.completed ? 'bg-slate-50/40' : 'bg-white'
+      className={`group flex items-start justify-between gap-3 py-3 px-4 transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/50 ${
+        task.completed ? 'bg-slate-50/40 dark:bg-slate-900/50' : 'bg-white dark:bg-slate-900'
       }`}
     >
       <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -68,26 +68,32 @@ export function TaskRow({
           checked={task.completed}
           onChange={() => onToggleComplete(task.id)}
           aria-label={`تکمیل '${task.title}'`}
-          className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer shrink-0"
+          className="mt-1 h-4 w-4 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-blue-600 focus:ring-blue-600 cursor-pointer shrink-0"
         />
 
         <div className="min-w-0 flex-1">
           <p
             className={`text-sm leading-6 break-words ${
-              task.completed ? 'line-through text-slate-400' : 'text-slate-900 font-medium'
+              task.completed
+                ? 'line-through text-slate-400 dark:text-slate-500'
+                : 'text-slate-900 dark:text-slate-100 font-medium'
             }`}
           >
             {task.title}
           </p>
 
           {task.notes && (
-            <p className={`text-xs mt-0.5 break-words ${task.completed ? 'text-slate-400' : 'text-slate-500'}`}>
+            <p
+              className={`text-xs mt-0.5 break-words ${
+                task.completed ? 'text-slate-400 dark:text-slate-500' : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
               {task.notes}
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-xs text-slate-500">
-            <span className="inline-flex items-center gap-1.5 text-slate-700 font-medium">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+            <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
               <span
                 className="w-2 h-2 rounded-xs shrink-0"
                 style={{ backgroundColor: subject?.color ?? '#64748B' }}
@@ -96,7 +102,7 @@ export function TaskRow({
               <span>{subject?.name ?? 'عمومی'}</span>
             </span>
 
-            <span aria-hidden="true" className="text-slate-300">
+            <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
               ·
             </span>
 
@@ -104,12 +110,12 @@ export function TaskRow({
 
             {task.reminderEnabled && (
               <>
-                <span aria-hidden="true" className="text-slate-300">
+                <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
                   ·
                 </span>
                 <span
                   className={`inline-flex items-center gap-1 font-mono-nums ${
-                    task.completed ? 'text-slate-400' : 'text-blue-700'
+                    task.completed ? 'text-slate-400 dark:text-slate-500' : 'text-blue-700 dark:text-blue-400'
                   }`}
                 >
                   <Bell className="w-3 h-3" aria-hidden="true" />
@@ -133,8 +139,8 @@ export function TaskRow({
           title={task.reminderEnabled ? 'خاموش کردن یادآور' : 'روشن کردن یادآور'}
           className={`p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
             task.reminderEnabled
-              ? 'text-blue-600 hover:bg-blue-50'
-              : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+              ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60'
+              : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           {task.reminderEnabled ? (
@@ -149,7 +155,7 @@ export function TaskRow({
           onClick={() => onEdit(task)}
           aria-label={`ویرایش '${task.title}'`}
           title="ویرایش تکلیف"
-          className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+          className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
         >
           <Pencil className="w-4 h-4" aria-hidden="true" />
         </button>
@@ -159,7 +165,7 @@ export function TaskRow({
           onClick={() => onDelete(task.id)}
           aria-label={`حذف '${task.title}'`}
           title="حذف تکلیف"
-          className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
+          className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
         >
           <Trash2 className="w-4 h-4" aria-hidden="true" />
         </button>

@@ -74,37 +74,39 @@ export function WeeklyDaySection({
     <section
       aria-label={`${day.persianWeekday} ${day.jalaliFormatted}`}
       data-testid={`day-section-${day.dateISO}`}
-      className={`bg-white border rounded-xl overflow-hidden ${
-        isToday ? 'border-blue-300' : 'border-slate-200'
+      className={`bg-white dark:bg-slate-900 border rounded-xl overflow-hidden ${
+        isToday ? 'border-blue-300 dark:border-blue-700' : 'border-slate-200 dark:border-slate-800'
       }`}
     >
       <header
         className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b ${
-          isToday ? 'bg-blue-50/50 border-blue-200/80' : 'bg-slate-50/60 border-slate-200'
+          isToday
+            ? 'bg-blue-50/50 dark:bg-blue-950/30 border-blue-200/80 dark:border-blue-900/70'
+            : 'bg-slate-50/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800'
         }`}
       >
         <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-          <h3 className="text-base font-semibold text-slate-900">{day.persianWeekday}</h3>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{day.persianWeekday}</h3>
           {isToday && (
-            <span className="text-xs font-semibold text-blue-700">امروز</span>
+            <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">امروز</span>
           )}
-          <span aria-hidden="true" className="text-slate-300">
+          <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
             ·
           </span>
-          <span className="text-sm font-medium text-slate-700 tabular-nums">
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-300 tabular-nums">
             {day.jalaliFormatted}
           </span>
-          <span aria-hidden="true" className="text-slate-300">
+          <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
             /
           </span>
-          <span dir="ltr" className="text-xs font-mono-nums text-slate-500">
+          <span dir="ltr" className="text-xs font-mono-nums text-slate-500 dark:text-slate-400">
             {day.gregorianFormattedEn}
           </span>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
           {tasks.length > 0 && (
-            <span className="text-xs text-slate-500 tabular-nums">
+            <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
               {toPersianDigits(completedCount)} از {toPersianDigits(tasks.length)} انجام‌شده
             </span>
           )}
@@ -117,7 +119,7 @@ export function WeeklyDaySection({
             }}
             aria-expanded={quickOpen}
             aria-label={`افزودن سریع تکلیف برای ${day.persianWeekday}`}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg text-blue-700 hover:bg-blue-50 transition-colors whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/60 transition-colors whitespace-nowrap shrink-0"
           >
             <Plus className="w-3.5 h-3.5" aria-hidden="true" />
             افزودن سریع
@@ -127,7 +129,7 @@ export function WeeklyDaySection({
             type="button"
             onClick={() => onOpenModalForDay(day.dateISO)}
             aria-label={`فرم کامل تکلیف برای ${day.persianWeekday}`}
-            className="text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+            className="text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors whitespace-nowrap shrink-0"
           >
             جزئیات بیشتر
           </button>
@@ -137,7 +139,7 @@ export function WeeklyDaySection({
       {quickOpen && (
         <form
           onSubmit={handleQuickSubmit}
-          className="px-4 py-3 bg-slate-50/70 border-b border-slate-200 space-y-2.5"
+          className="px-4 py-3 bg-slate-50/70 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 space-y-2.5"
         >
           <div className="flex flex-col md:flex-row gap-2">
             <input
@@ -149,14 +151,14 @@ export function WeeklyDaySection({
               }}
               placeholder={`عنوان تکلیف برای ${day.persianWeekday}...`}
               aria-label={`عنوان تکلیف برای ${day.persianWeekday}`}
-              className="flex-1 min-w-0 px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+              className="flex-1 min-w-0 px-3 py-2 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
             />
 
             <select
               value={subjectId}
               onChange={(e) => setSubjectId(e.target.value)}
               aria-label="انتخاب درس"
-              className="px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="px-3 py-2 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               {subjects.map((sub) => (
                 <option key={sub.id} value={sub.id}>
@@ -169,20 +171,20 @@ export function WeeklyDaySection({
               value={priority}
               onChange={(e) => setPriority(e.target.value as PriorityLevel)}
               aria-label="انتخاب اولویت"
-              className="px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="px-3 py-2 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               <option value="high">اولویت بالا</option>
               <option value="medium">اولویت متوسط</option>
               <option value="low">اولویت عادی</option>
             </select>
 
-            <div className="flex items-center gap-2 bg-white border border-slate-300 rounded-lg px-2.5 py-1.5">
-              <label className="inline-flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer whitespace-nowrap">
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5">
+              <label className="inline-flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer whitespace-nowrap">
                 <input
                   type="checkbox"
                   checked={reminderEnabled}
                   onChange={(e) => setReminderEnabled(e.target.checked)}
-                  className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                  className="h-3.5 w-3.5 rounded border-slate-300 dark:border-slate-600 dark:bg-slate-800 text-blue-600 focus:ring-blue-600"
                 />
                 یادآور
               </label>
@@ -193,7 +195,7 @@ export function WeeklyDaySection({
                   value={reminderTime}
                   onChange={(e) => setReminderTime(e.target.value)}
                   aria-label="ساعت یادآور"
-                  className="text-xs font-mono-nums text-slate-800 border-0 p-0 focus:outline-none focus:ring-0"
+                  className="text-xs font-mono-nums bg-transparent text-slate-800 dark:text-slate-100 border-0 p-0 focus:outline-none focus:ring-0"
                 />
               )}
             </div>
@@ -211,18 +213,18 @@ export function WeeklyDaySection({
                   setQuickOpen(false);
                   setError('');
                 }}
-                className="px-3 py-2 text-xs font-medium rounded-lg text-slate-600 hover:bg-slate-200/70 transition-colors whitespace-nowrap shrink-0"
+                className="px-3 py-2 text-xs font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-colors whitespace-nowrap shrink-0"
               >
                 انصراف
               </button>
             </div>
           </div>
-          {error && <p className="text-xs text-rose-600">{error}</p>}
+          {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
         </form>
       )}
 
       {tasks.length === 0 ? (
-        <div className="px-4 py-4 text-xs text-slate-400 flex items-center justify-between">
+        <div className="px-4 py-4 text-xs text-slate-400 dark:text-slate-500 flex items-center justify-between">
           <span>
             {hasActiveFilters
               ? 'تکلیفی مطابق فیلترهای فعلی در این روز وجود ندارد.'
@@ -230,7 +232,7 @@ export function WeeklyDaySection({
           </span>
         </div>
       ) : (
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {tasks.map((task) => (
             <TaskRow
               key={task.id}
