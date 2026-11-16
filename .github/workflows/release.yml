@@ -171,9 +171,51 @@ jobs:
           name: android-apk-build
           path: release-android/*.apk
 
+  build-macos:
+    name: macOS (Apple Silicon & Intel DMG + ZIP)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --legacy-peer-deps
+          else
+            npm install --legacy-peer-deps
+          fi
+
+      - name: Build web bundle for Electron
+        env:
+          ELECTRON_BUILD: 'true'
+        run: npx vite build
+
+      - name: Install Electron & electron-builder
+        run: npm install --no-save --legacy-peer-deps electron electron-builder
+
+      - name: Package macOS binaries (.dmg, .zip)
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --mac --publish never
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-builds
+          path: |
+            release-desktop/*.dmg
+            release-desktop/*.zip
+
   publish-release:
     name: Publish GitHub Release
-    needs: [build-windows, build-linux, build-android]
+    needs: [build-windows, build-linux, build-macos, build-android]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -181,6 +223,16 @@ jobs:
         with:
           path: release-artifacts
           merge-multiple: true
+
+      - name: Generate SHA256 file for every build
+        working-directory: release-artifacts
+        shell: bash
+        run: |
+          shopt -s nullglob
+          for file in *.exe *.deb *.pacman *.AppImage *.dmg *.zip *.apk; do
+            sha256sum "$file" > "${file}.sha256"
+          done
+          ls -lh
 
       - name: Resolve release tag
         id: tag
@@ -204,4 +256,8 @@ jobs:
             release-artifacts/*.deb
             release-artifacts/*.pacman
             release-artifacts/*.AppImage
+            release-artifacts/*.dmg
+            release-artifacts/*.zip
             release-artifacts/*.apk
+            release-artifacts/*.sha256
+

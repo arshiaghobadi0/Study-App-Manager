@@ -60,3 +60,19 @@ pacman:
   artifactName: weekly-study-planner-${version}-x86_64.pacman
 appImage:
   artifactName: WeeklyStudyPlanner-${version}-x86_64.AppImage
+mac:
+  category: public.app-category.education
+  icon: public/pwa-512x512.png
+  artifactName: WeeklyStudyPlanner-${version}-mac-${arch}.${ext}
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+dmg:
+  artifactName: WeeklyStudyPlanner-${version}-mac-${arch}.${ext}
+
