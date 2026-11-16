@@ -4,14 +4,13 @@
   "version": "1.0.0",
   "description": "برنامه‌ریز درسی هفتگی با تقویم شمسی و میلادی، یادآور، نمودار پیشرفت، خروجی PDF و نسخه پشتیبان JSON",
   "author": "Weekly Study Planner <support@studyplanner.local>",
-  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
-    "build:electron": "ELECTRON_BUILD=true vite build",
+    "build:tauri": "TAURI_BUILD=true vite build",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js release-desktop",
+    "clean": "rm -rf dist server.js src-tauri/target",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

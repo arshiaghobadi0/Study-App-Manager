@@ -4,6 +4,7 @@ import {
   isIOSUserAgent,
   shouldShowPWAInstallControl,
 } from '../utils/pwa';
+import { isTauriRuntime } from '../utils/tauriBridge';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -15,6 +16,7 @@ export function usePWAInstall() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isElectron, setIsElectron] = useState(false);
+  const [isTauri, setIsTauri] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -27,6 +29,7 @@ export function usePWAInstall() {
     const ua = window.navigator.userAgent;
     setIsIOS(isIOSUserAgent(ua));
     setIsElectron(isElectronUserAgent(ua));
+    setIsTauri(isTauriRuntime());
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
@@ -62,6 +65,7 @@ export function usePWAInstall() {
   const canShowControl = shouldShowPWAInstallControl({
     isInstalled,
     isElectron,
+    isTauri,
     hasDeferredPrompt: !!deferredPrompt,
     isIOS,
   });
@@ -71,6 +75,7 @@ export function usePWAInstall() {
     isInstalled,
     isIOS,
     isElectron,
+    isTauri,
     canShowControl,
     install,
   };

@@ -37,6 +37,16 @@ test('shouldShowPWAInstallControl suppresses button in standalone or Electron mo
     shouldShowPWAInstallControl({
       isInstalled: false,
       isElectron: false,
+      isTauri: true,
+      hasDeferredPrompt: true,
+      isIOS: false,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldShowPWAInstallControl({
+      isInstalled: false,
+      isElectron: false,
       hasDeferredPrompt: true,
       isIOS: false,
     }),

@@ -9,10 +9,11 @@ export function isElectronUserAgent(userAgent: string): boolean {
 export function shouldShowPWAInstallControl(args: {
   isInstalled: boolean;
   isElectron: boolean;
+  isTauri?: boolean;
   hasDeferredPrompt: boolean;
   isIOS: boolean;
 }): boolean {
-  if (args.isInstalled || args.isElectron) {
+  if (args.isInstalled || args.isElectron || args.isTauri) {
     return false;
   }
   return args.hasDeferredPrompt || args.isIOS;

@@ -5,15 +5,18 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
-  const isElectronBuild = process.env.ELECTRON_BUILD === 'true';
+  const isNativeBuild =
+    process.env.ELECTRON_BUILD === 'true' ||
+    process.env.TAURI_BUILD === 'true' ||
+    Boolean(process.env.TAURI_ENV_PLATFORM);
 
   return {
-    base: isElectronBuild ? './' : '/',
+    base: isNativeBuild ? './' : '/',
     plugins: [
       react(),
       tailwindcss(),
       VitePWA({
-        disable: isElectronBuild,
+        disable: isNativeBuild,
         registerType: 'autoUpdate',
         includeAssets: [
           'icon.svg',
@@ -92,7 +95,7 @@ export default defineConfig(() => {
           ],
         },
         devOptions: {
-          enabled: !isElectronBuild,
+          enabled: !isNativeBuild,
           type: 'module',
         },
       }),

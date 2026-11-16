@@ -1,6 +1,7 @@
 import type { PriorityLevel, StudyTask, SubjectCategory } from '../types/study';
 import { SUBJECT_COLOR_SWATCHES } from './tasks';
 import type { ThemeMode } from './theme';
+import { invokeTauriCommand, isTauriRuntime } from './tauriBridge';
 
 export interface StudyBackupPayload {
   schemaVersion: 1;
@@ -374,7 +375,7 @@ export function buildBackupFilename(dateISO: string): string {
   return `study-planner-backup-${safeDate}.json`;
 }
 
-export function downloadJsonFile(filename: string, jsonContent: string): void {
+function triggerBrowserJsonDownload(filename: string, jsonContent: string): void {
   const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
@@ -387,4 +388,17 @@ export function downloadJsonFile(filename: string, jsonContent: string): void {
   window.setTimeout(() => {
     URL.revokeObjectURL(url);
   }, 1000);
+}
+
+export function downloadJsonFile(filename: string, jsonContent: string): void {
+  if (isTauriRuntime()) {
+    void invokeTauriCommand<string>('save_json_backup', {
+      filename,
+      content: jsonContent,
+    }).catch(() => {
+      triggerBrowserJsonDownload(filename, jsonContent);
+    });
+    return;
+  }
+  triggerBrowserJsonDownload(filename, jsonContent);
 }
