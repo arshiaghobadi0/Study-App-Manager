@@ -1,0 +1,182 @@
+name: Build and Release Multi-Platform Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag name (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Windows x64 (NSIS + Portable)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web bundle for Electron
+        env:
+          ELECTRON_BUILD: 'true'
+        run: npx vite build
+
+      - name: Install Electron & electron-builder
+        run: npm install --no-save electron electron-builder
+
+      - name: Package Windows x64 installers
+        run: npx electron-builder --win --x64 --publish never
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64-builds
+          path: |
+            release-desktop/*.exe
+            release-desktop/*.exe.blockmap
+
+  build-linux:
+    name: Linux x64 (Debian .deb, Arch .pacman, AppImage)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install packaging system tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive-tools zstd rpm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web bundle for Electron
+        env:
+          ELECTRON_BUILD: 'true'
+        run: npx vite build
+
+      - name: Install Electron & electron-builder
+        run: npm install --no-save electron electron-builder
+
+      - name: Package Linux binaries (.deb, .pacman, .AppImage)
+        run: npx electron-builder --linux deb pacman AppImage --x64 --publish never
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64-builds
+          path: |
+            release-desktop/*.deb
+            release-desktop/*.pacman
+            release-desktop/*.AppImage
+
+  build-android:
+    name: Android APK (Capacitor)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web assets for Capacitor
+        env:
+          ELECTRON_BUILD: 'true'
+        run: npx vite build
+
+      - name: Install Capacitor packages
+        run: npm install --no-save @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Generate and sync Capacitor Android project
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Build Android APK (Debug)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Stage APK artifact
+        run: |
+          mkdir -p release-android
+          cp android/app/build/outputs/apk/debug/app-debug.apk release-android/WeeklyStudyPlanner-android-debug.apk
+
+      - name: Upload Android APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-build
+          path: release-android/*.apk
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: [build-windows, build-linux, build-android]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG_NAME=${{ github.event.inputs.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "TAG_NAME=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release & Attach Binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.TAG_NAME }}
+          name: "Weekly Study Planner ${{ steps.tag.outputs.TAG_NAME }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            release-artifacts/*.exe
+            release-artifacts/*.deb
+            release-artifacts/*.pacman
+            release-artifacts/*.AppImage
+            release-artifacts/*.apk

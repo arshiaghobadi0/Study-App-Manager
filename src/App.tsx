@@ -1,8 +1,10 @@
 import { Bell, CheckCircle2, ChevronLeft, ChevronRight, Download, Moon, Plus, Printer, RotateCcw, Search, Sun, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ImportBackupModal } from './components/ImportBackupModal';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { PrintableWeekSheet } from './components/PrintableWeekSheet';
 import { PrintScheduleModal } from './components/PrintScheduleModal';
+import { PWAInstallButton } from './components/PWAInstallButton';
 import { ReminderBanner } from './components/ReminderBanner';
 import { SubjectModal } from './components/SubjectModal';
 import { TaskModal } from './components/TaskModal';
@@ -602,6 +604,8 @@ export default function App() {
                 ورودی JSON
               </button>
 
+              <PWAInstallButton />
+
               {notificationPermission !== 'unsupported' && (
                 <button
                   type="button"
@@ -837,6 +841,8 @@ export default function App() {
       <div className="hidden print:block bg-white" data-testid="printable-schedule-root">
         <PrintableWeekSheet data={printableData} />
       </div>
+
+      <OfflineIndicator />
     </>
   );
 }

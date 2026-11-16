@@ -1,0 +1,44 @@
+# Maintainer: Weekly Study Planner
+pkgname=weekly-study-planner
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Weekly study task planner with Jalali/Gregorian dates, reminders, analytics, and JSON backup"
+arch=('x86_64')
+url="https://github.com/OWNER/REPO"
+license=('Apache-2.0')
+depends=('electron')
+makedepends=('nodejs' 'npm')
+source=()
+sha256sums=()
+
+build() {
+  cd "${startdir}/../.."
+  npm ci
+  ELECTRON_BUILD=true npm run build
+}
+
+package() {
+  cd "${startdir}/../.."
+  install -dm755 "${pkgdir}/usr/lib/${pkgname}"
+  cp -r dist electron public "${pkgdir}/usr/lib/${pkgname}/"
+  install -Dm644 package.json "${pkgdir}/usr/lib/${pkgname}/package.json"
+
+  install -dm755 "${pkgdir}/usr/bin"
+  cat << 'EOF' > "${pkgdir}/usr/bin/${pkgname}"
+#!/bin/sh
+exec electron /usr/lib/weekly-study-planner/electron/main.cjs "$@"
+EOF
+  chmod 755 "${pkgdir}/usr/bin/${pkgname}"
+
+  install -Dm644 public/pwa-512x512.png "${pkgdir}/usr/share/icons/hicolor/512x512/apps/${pkgname}.png"
+  install -Dm644 /dev/stdin "${pkgdir}/usr/share/applications/${pkgname}.desktop" << 'EOF'
+[Desktop Entry]
+Name=Weekly Study Planner
+Comment=Weekly study task planner with Jalali/Gregorian dates
+Exec=weekly-study-planner %U
+Terminal=false
+Type=Application
+Icon=weekly-study-planner
+Categories=Education;Office;
+EOF
+}
