@@ -230,9 +230,21 @@ jobs:
           path: release-macos/*.dmg
 
   build-android:
-    name: Android APK (Rust/Tauri)
+    name: Android Release APK (Signed Rust/Tauri)
     runs-on: ubuntu-24.04
     steps:
+      - name: Verify Android release signing secrets
+        env:
+          HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+          HAS_STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD != '' }}
+          HAS_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS != '' }}
+          HAS_KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD != '' }}
+        run: |
+          if [ "$HAS_KEYSTORE" != "true" ] || [ "$HAS_STORE_PASS" != "true" ] || [ "$HAS_KEY_ALIAS" != "true" ] || [ "$HAS_KEY_PASS" != "true" ]; then
+            echo "::error::Missing Android release signing secrets. Configure ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD in Repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -287,18 +299,45 @@ jobs:
           npx tauri android init --force
           npx tauri icon public/pwa-512x512.png
 
-      - name: Build Android APK (Debug-signed arm64)
-        run: npx tauri android build --apk --debug --target aarch64
+      - name: Build Android Release APK (arm64 + armv7)
+        run: npx tauri android build --apk --target aarch64 --target armv7
 
-      - name: Stage APK artifact
+      - name: Align and Sign Release APK
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           mkdir -p release-android
-          APK_FILE=$(find src-tauri/gen/android/app/build/outputs/apk -type f -name "*.apk" | head -n 1)
-          if [ -z "$APK_FILE" ]; then
-            echo "No APK file produced"
+          BUILD_TOOLS_PATH="$ANDROID_HOME/build-tools/35.0.0"
+          UNSIGNED_APK=$(find src-tauri/gen/android/app/build/outputs/apk -type f -name "*release*.apk" | head -n 1)
+          if [ -z "$UNSIGNED_APK" ]; then
+            echo "::error::No release APK produced under src-tauri/gen/android/app/build/outputs/apk"
             exit 1
           fi
-          cp "$APK_FILE" release-android/WeeklyStudyPlanner-android-arm64.apk
+          echo "Found release APK: $UNSIGNED_APK"
+
+          KEYSTORE_PATH="/tmp/release-signing.jks"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 -d > "$KEYSTORE_PATH"
+
+          ALIGNED_APK="/tmp/app-release-aligned.apk"
+          SIGNED_APK="release-android/WeeklyStudyPlanner-android-release.apk"
+
+          "$BUILD_TOOLS_PATH/zipalign" -f -p 4 "$UNSIGNED_APK" "$ALIGNED_APK"
+          "$BUILD_TOOLS_PATH/apksigner" sign \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --ks "$KEYSTORE_PATH" \
+            --ks-pass "pass:$ANDROID_KEYSTORE_PASSWORD" \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --key-pass "pass:$ANDROID_KEY_PASSWORD" \
+            --out "$SIGNED_APK" \
+            "$ALIGNED_APK"
+
+          "$BUILD_TOOLS_PATH/apksigner" verify --verbose "$SIGNED_APK"
+          rm -f "$KEYSTORE_PATH" "$ALIGNED_APK"
           ls -lh release-android
 
       - name: Upload Android APK artifact
