@@ -1,12 +1,24 @@
-import { Bell, ChevronLeft, ChevronRight, Moon, Plus, Printer, RotateCcw, Search, Sun } from 'lucide-react';
+import { Bell, CheckCircle2, ChevronLeft, ChevronRight, Download, Moon, Plus, Printer, RotateCcw, Search, Sun, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ImportBackupModal } from './components/ImportBackupModal';
 import { PrintableWeekSheet } from './components/PrintableWeekSheet';
 import { PrintScheduleModal } from './components/PrintScheduleModal';
 import { ReminderBanner } from './components/ReminderBanner';
 import { SubjectModal } from './components/SubjectModal';
 import { TaskModal } from './components/TaskModal';
 import { WeeklyDaySection } from './components/WeeklyDaySection';
+import { WeeklyProgressChart } from './components/WeeklyProgressChart';
 import type { PriorityLevel, StudyTask, SubjectCategory, TaskFilterState } from './types/study';
+import { buildWeeklyProgressSeries } from './utils/analytics';
+import {
+  applyImportedBackup,
+  buildBackupFilename,
+  createBackupPayload,
+  downloadJsonFile,
+  serializeBackupJson,
+  type ImportMode,
+  type ParsedBackupData,
+} from './utils/backup';
 import {
   formatGregorianEnShort,
   formatJalaliLong,
@@ -58,11 +70,13 @@ export default function App() {
   const [editingTask, setEditingTask] = useState<StudyTask | null>(null);
   const [subjectModalOpen, setSubjectModalOpen] = useState(false);
   const [printModalOpen, setPrintModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [printOptions, setPrintOptions] = useState<PrintScheduleOptions>({
     includeCompleted: true,
     includeNotes: true,
   });
   const [theme, setTheme] = useState<ThemeMode>(() => loadTheme());
+  const [backupFeedback, setBackupFeedback] = useState<string | null>(null);
 
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
@@ -74,11 +88,20 @@ export default function App() {
 
   const announcedIdsRef = useRef<Set<string>>(new Set());
   const userInteractedRef = useRef(false);
+  const backupTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     applyThemeToDocument(theme);
     saveTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    return () => {
+      if (backupTimerRef.current !== null) {
+        window.clearTimeout(backupTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const markInteracted = () => {
@@ -148,6 +171,10 @@ export default function App() {
   }, [dueReminders, notificationPermission, subjectsById]);
 
   const weeklyStats = useMemo(() => computeWeeklyStats(tasks, weekDateISOs), [tasks, weekDateISOs]);
+  const weeklyProgressSummary = useMemo(
+    () => buildWeeklyProgressSeries(weekDays, tasks),
+    [weekDays, tasks],
+  );
   const filteredTasks = useMemo(() => filterTasks(tasks, filters), [tasks, filters]);
 
   const hasActiveFilters =
@@ -184,6 +211,66 @@ export default function App() {
 
   const handleTriggerPrint = () => {
     window.print();
+  };
+
+  const handleExportBackup = () => {
+    const payload = createBackupPayload({
+      tasks,
+      subjects,
+      theme,
+    });
+    const jsonContent = serializeBackupJson(payload);
+    const filename = buildBackupFilename(todayISO);
+    downloadJsonFile(filename, jsonContent);
+
+    setBackupFeedback(
+      `فایل پشتیبان (${toPersianDigits(payload.summary.taskCount)} تکلیف و ${toPersianDigits(payload.summary.subjectCount)} درس) دانلود شد.`,
+    );
+    if (backupTimerRef.current !== null) {
+      window.clearTimeout(backupTimerRef.current);
+    }
+    backupTimerRef.current = window.setTimeout(() => {
+      setBackupFeedback(null);
+    }, 5000);
+  };
+
+  const handleApplyImport = ({
+    data,
+    mode,
+    applyTheme,
+  }: {
+    data: ParsedBackupData;
+    mode: ImportMode;
+    applyTheme: boolean;
+  }) => {
+    const applied = applyImportedBackup({
+      mode,
+      imported: data,
+      currentTasks: tasks,
+      currentSubjects: subjects,
+    });
+    setSubjects(applied.subjects);
+    setTasks(applied.tasks);
+    if (applyTheme && data.theme) {
+      setTheme(data.theme);
+    }
+    if (
+      filters.subjectId !== 'all' &&
+      !applied.subjects.some((s) => s.id === filters.subjectId)
+    ) {
+      setFilters((prev) => ({ ...prev, subjectId: 'all' }));
+    }
+
+    const modeLabel = mode === 'replace' ? 'جایگزین' : 'ادغام';
+    setBackupFeedback(
+      `داده‌های JSON با موفقیت ${modeLabel} شد (${toPersianDigits(data.tasks.length)} تکلیف و ${toPersianDigits(applied.subjects.length)} درس).`,
+    );
+    if (backupTimerRef.current !== null) {
+      window.clearTimeout(backupTimerRef.current);
+    }
+    backupTimerRef.current = window.setTimeout(() => {
+      setBackupFeedback(null);
+    }, 5000);
   };
 
   const handleRequestNotification = async () => {
@@ -497,6 +584,24 @@ export default function App() {
                 چاپ / ذخیره PDF
               </button>
 
+              <button
+                type="button"
+                onClick={handleExportBackup}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors whitespace-nowrap shrink-0"
+              >
+                <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                پشتیبان‌گیری JSON
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setImportModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors whitespace-nowrap shrink-0"
+              >
+                <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+                ورودی JSON
+              </button>
+
               {notificationPermission !== 'unsupported' && (
                 <button
                   type="button"
@@ -514,6 +619,17 @@ export default function App() {
               )}
             </div>
           </div>
+
+          {backupFeedback && (
+            <p
+              role="status"
+              aria-live="polite"
+              className="text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>{backupFeedback}</span>
+            </p>
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-slate-200 dark:border-slate-800 pt-4">
             <div className="border-b border-l sm:border-b-0 border-slate-200 dark:border-slate-800 pb-3 pl-4 sm:py-0">
@@ -549,6 +665,12 @@ export default function App() {
           onComplete={handleToggleComplete}
           onSnooze={handleSnoozeReminder}
           onDismiss={handleDismissReminder}
+        />
+
+        <WeeklyProgressChart
+          summary={weeklyProgressSummary}
+          theme={theme}
+          onAddTask={() => handleOpenNewModal(weekDays[0]?.dateISO ?? todayISO)}
         />
 
         <section aria-label="فیلتر و جستجو" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
@@ -702,6 +824,13 @@ export default function App() {
         onChangeOptions={setPrintOptions}
         onClose={() => setPrintModalOpen(false)}
         onTriggerPrint={handleTriggerPrint}
+      />
+
+      <ImportBackupModal
+        isOpen={importModalOpen}
+        existingSubjects={subjects}
+        onClose={() => setImportModalOpen(false)}
+        onApplyImport={handleApplyImport}
       />
       </div>
 
