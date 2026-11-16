@@ -19,8 +19,8 @@ win:
       arch:
         - x64
   icon: public/pwa-512x512.png
-  artifactName: WeeklyStudyPlanner-Setup-${version}-win-x64.${ext}
 nsis:
+  artifactName: WeeklyStudyPlanner-Setup-${version}-win-x64.${ext}
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
@@ -58,5 +58,5 @@ deb:
     - libsecret-1-0
 pacman:
   artifactName: weekly-study-planner-${version}-x86_64.pacman
-AppImage:
+appImage:
   artifactName: WeeklyStudyPlanner-${version}-x86_64.AppImage
