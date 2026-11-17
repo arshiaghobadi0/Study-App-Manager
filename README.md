@@ -94,7 +94,7 @@
 | **Linux (Debian / Ubuntu)** | بسته نصبی (`.deb`) | `amd64` / `x64` | `*.deb.sha256` | [دانلود از Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 | **Linux (Arch / Manjaro)** | بسته نصبی (`.pkg.tar.zst`) | `x86_64` | `*.pkg.tar.zst.sha256` | [دانلود از Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 | **Linux (توزیع‌های عمومی)** | اجرای مستقیم (`.AppImage`) | `x86_64` | `*.AppImage.sha256` | [دانلود از Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
-| **Android** | فایل نصبی اندروید (`.apk`) | `arm64 + armv7` | `*.apk.sha256` | [دانلود از Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
+| **Android** | فایل نصبی (`.apk`) | `arm64` | `*.apk.sha256` | [دانلود از Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 
 #### 🔐 بررسی صحت فایل با SHA256
 پس از دانلود فایل برنامه و فایل `.sha256` هم‌نام آن از صفحه Releases:
@@ -260,7 +260,7 @@ Pre-built binaries for all major desktop and mobile platforms are compiled autom
 | **Linux (Debian / Ubuntu)** | Debian Package (`.deb`) | `amd64` / `x64` | `*.deb.sha256` | [Download from Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 | **Linux (Arch / Manjaro)** | Pacman Package (`.pkg.tar.zst`) | `x86_64` | `*.pkg.tar.zst.sha256` | [Download from Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 | **Linux (Universal)** | Portable Binary (`.AppImage`) | `x86_64` | `*.AppImage.sha256` | [Download from Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
-| **Android** | Android Installer (`.apk`) | `arm64 + armv7` | `*.apk.sha256` | [Download from Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
+| **Android** | Android Package (`.apk`) | `arm64` | `*.apk.sha256` | [Download from Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 
 #### 🔐 Verify Downloads with SHA256
 Download both the installer and its matching `.sha256` file from Releases, then run:
