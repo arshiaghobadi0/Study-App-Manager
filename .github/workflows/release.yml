@@ -9,7 +9,7 @@ on:
       tag_name:
         description: 'Release tag name (e.g. v1.0.0)'
         required: true
-        default: 'v1.0.0'
+        default: 'v1.0.1'
 
 permissions:
   contents: write
@@ -287,18 +287,18 @@ jobs:
           npx tauri android init --force
           npx tauri icon public/pwa-512x512.png
 
-      - name: Build Android APK (Debug-signed arm64)
-        run: npx tauri android build --apk --debug --target aarch64
+      - name: Build Android APK (arm64 + armv7)
+        run: npx tauri android build --apk --debug --target aarch64 --target armv7
 
-      - name: Stage APK artifact
+      - name: Stage Android APK artifact
         run: |
           mkdir -p release-android
           APK_FILE=$(find src-tauri/gen/android/app/build/outputs/apk -type f -name "*.apk" | head -n 1)
           if [ -z "$APK_FILE" ]; then
-            echo "No APK file produced"
+            echo "::error::No APK produced under src-tauri/gen/android/app/build/outputs/apk"
             exit 1
           fi
-          cp "$APK_FILE" release-android/WeeklyStudyPlanner-android-arm64.apk
+          cp "$APK_FILE" release-android/WeeklyStudyPlanner-android.apk
           ls -lh release-android
 
       - name: Upload Android APK artifact

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { StudyTask } from '../types/study';
 import {
+  computeSidebarCounts,
   computeSnoozeUntilISO,
   computeWeeklyStats,
   createInitialSeedTasks,
@@ -56,7 +57,7 @@ test('sortTasksForDay puts incomplete tasks first, then sorts by priority and re
   );
 });
 
-test('filterTasks filters by subject, priority, completion, and search query', () => {
+test('filterTasks filters by subject, priority, completion, dateISO, reminders, and search query', () => {
   const bySubject = filterTasks(sampleTasks, {
     subjectId: 'physics',
     priority: 'all',
@@ -80,6 +81,16 @@ test('filterTasks filters by subject, priority, completion, and search query', (
     search: '',
   });
   assert.deepEqual(byPendingHigh.map((t) => t.id), ['2']);
+
+  const byDateAndReminder = filterTasks(sampleTasks, {
+    subjectId: 'all',
+    priority: 'all',
+    completion: 'all',
+    search: '',
+    dateISO: '2026-11-14',
+    onlyReminders: true,
+  });
+  assert.deepEqual(byDateAndReminder.map((t) => t.id), ['2']);
 });
 
 test('computeWeeklyStats aggregates counts for the target week only', () => {
@@ -91,6 +102,19 @@ test('computeWeeklyStats aggregates counts for the target week only', () => {
     pending: 2,
     activeReminders: 1,
   });
+});
+
+test('computeSidebarCounts aggregates today, week totals, and per-subject counts accurately', () => {
+  const days = getWeekDays(0, '2026-11-15').map((d) => d.dateISO);
+  const counts = computeSidebarCounts(sampleTasks, days, '2026-11-14');
+  assert.equal(counts.todayPending, 2);
+  assert.equal(counts.weekTotal, 3);
+  assert.equal(counts.weekCompleted, 1);
+  assert.equal(counts.weekHighPriorityPending, 1);
+  assert.equal(counts.weekActiveReminders, 1);
+  assert.equal(counts.bySubject.math, 1);
+  assert.equal(counts.bySubject.physics, 1);
+  assert.equal(counts.bySubject.literature, 1);
 });
 
 test('getDueReminderTasks detects due reminders and respects dismissal and snooze', () => {

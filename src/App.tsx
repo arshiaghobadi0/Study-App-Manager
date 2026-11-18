@@ -1,7 +1,22 @@
-import { Bell, CheckCircle2, ChevronLeft, ChevronRight, Download, Moon, Plus, Printer, RotateCcw, Search, Sun, Upload } from 'lucide-react';
+import {
+  Bell,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Menu,
+  PanelRightOpen,
+  Plus,
+  Printer,
+  RotateCcw,
+  Search,
+  Trash2,
+  Upload,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ImportBackupModal } from './components/ImportBackupModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { PlannerSidebar, type WorkspaceViewMode } from './components/PlannerSidebar';
 import { PrintableWeekSheet } from './components/PrintableWeekSheet';
 import { PrintScheduleModal } from './components/PrintScheduleModal';
 import { PWAInstallButton } from './components/PWAInstallButton';
@@ -33,8 +48,9 @@ import {
 } from './utils/jalali';
 import { buildPrintableWeekData, type PrintScheduleOptions } from './utils/printSchedule';
 import { playReminderChime } from './utils/sound';
-import { loadSubjects, loadTasks, saveSubjects, saveTasks } from './utils/storage';
+import { loadSubjects, loadTasks, loadTrash, saveSubjects, saveTasks, saveTrash } from './utils/storage';
 import {
+  computeSidebarCounts,
   computeSnoozeUntilISO,
   computeWeeklyStats,
   filterTasks,
@@ -58,6 +74,7 @@ function generateId(prefix: string): string {
 
 export default function App() {
   const [tasks, setTasks] = useState<StudyTask[]>(() => loadTasks());
+  const [trashTasks, setTrashTasks] = useState<StudyTask[]>(() => loadTrash());
   const [subjects, setSubjects] = useState<SubjectCategory[]>(() => loadSubjects());
   const [weekOffset, setWeekOffset] = useState(0);
   const [filters, setFilters] = useState<TaskFilterState>({
@@ -66,6 +83,9 @@ export default function App() {
     completion: 'all',
     search: '',
   });
+  const [viewMode, setViewMode] = useState<WorkspaceViewMode>('board');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [modalInitialDateISO, setModalInitialDateISO] = useState(() => getTodayISO());
@@ -122,6 +142,10 @@ export default function App() {
   }, [tasks]);
 
   useEffect(() => {
+    saveTrash(trashTasks);
+  }, [trashTasks]);
+
+  useEffect(() => {
     saveSubjects(subjects);
   }, [subjects]);
 
@@ -173,6 +197,10 @@ export default function App() {
   }, [dueReminders, notificationPermission, subjectsById]);
 
   const weeklyStats = useMemo(() => computeWeeklyStats(tasks, weekDateISOs), [tasks, weekDateISOs]);
+  const sidebarCounts = useMemo(
+    () => computeSidebarCounts(tasks, weekDateISOs, todayISO),
+    [tasks, weekDateISOs, todayISO],
+  );
   const weeklyProgressSummary = useMemo(
     () => buildWeeklyProgressSeries(weekDays, tasks),
     [weekDays, tasks],
@@ -183,7 +211,17 @@ export default function App() {
     filters.subjectId !== 'all' ||
     filters.priority !== 'all' ||
     filters.completion !== 'all' ||
+    Boolean(filters.dateISO) ||
+    Boolean(filters.onlyReminders) ||
     filters.search.trim().length > 0;
+
+  const visibleWeekDays = useMemo(() => {
+    if (filters.dateISO) {
+      const matching = weekDays.filter((d) => d.dateISO === filters.dateISO);
+      if (matching.length > 0) return matching;
+    }
+    return weekDays;
+  }, [weekDays, filters.dateISO]);
 
   const tasksByDate = useMemo(() => {
     const grouped: Record<string, StudyTask[]> = {};
@@ -211,6 +249,30 @@ export default function App() {
     [weekDays, tasks, subjectsById, printOptions],
   );
 
+  const boardHeading = useMemo(() => {
+    if (viewMode === 'trash') return 'اخیراً حذف‌شده';
+    if (filters.onlyReminders) return 'یادآورهای فعال';
+    if (filters.dateISO === todayISO) return 'تکالیف امروز';
+    if (filters.subjectId !== 'all') {
+      return subjectsById[filters.subjectId]?.name ?? 'برنامه درسی';
+    }
+    if (filters.completion === 'completed') return 'تکمیل‌شده‌های هفته';
+    if (filters.priority === 'high') return 'تکالیف فوری و اولویت بالا';
+    if (filters.priority === 'medium') return 'تکالیف اولویت متوسط';
+    if (filters.priority === 'low') return 'تکالیف اولویت عادی';
+    return 'برنامه درسی هفتگی';
+  }, [viewMode, filters, todayISO, subjectsById]);
+
+  const showTimedFeedback = (message: string) => {
+    setBackupFeedback(message);
+    if (backupTimerRef.current !== null) {
+      window.clearTimeout(backupTimerRef.current);
+    }
+    backupTimerRef.current = window.setTimeout(() => {
+      setBackupFeedback(null);
+    }, 5000);
+  };
+
   const handleTriggerPrint = () => {
     window.print();
   };
@@ -225,15 +287,9 @@ export default function App() {
     const filename = buildBackupFilename(todayISO);
     downloadJsonFile(filename, jsonContent);
 
-    setBackupFeedback(
+    showTimedFeedback(
       `فایل پشتیبان (${toPersianDigits(payload.summary.taskCount)} تکلیف و ${toPersianDigits(payload.summary.subjectCount)} درس) دانلود شد.`,
     );
-    if (backupTimerRef.current !== null) {
-      window.clearTimeout(backupTimerRef.current);
-    }
-    backupTimerRef.current = window.setTimeout(() => {
-      setBackupFeedback(null);
-    }, 5000);
   };
 
   const handleApplyImport = ({
@@ -264,15 +320,9 @@ export default function App() {
     }
 
     const modeLabel = mode === 'replace' ? 'جایگزین' : 'ادغام';
-    setBackupFeedback(
+    showTimedFeedback(
       `داده‌های JSON با موفقیت ${modeLabel} شد (${toPersianDigits(data.tasks.length)} تکلیف و ${toPersianDigits(applied.subjects.length)} درس).`,
     );
-    if (backupTimerRef.current !== null) {
-      window.clearTimeout(backupTimerRef.current);
-    }
-    backupTimerRef.current = window.setTimeout(() => {
-      setBackupFeedback(null);
-    }, 5000);
   };
 
   const handleRequestNotification = async () => {
@@ -395,7 +445,26 @@ export default function App() {
   };
 
   const handleDeleteTask = (taskId: string) => {
+    const target = tasks.find((t) => t.id === taskId);
+    if (!target) return;
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    setTrashTasks((prev) => [{ ...target, deletedAt: new Date().toISOString() }, ...prev]);
+  };
+
+  const handleRestoreFromTrash = (taskId: string) => {
+    const target = trashTasks.find((t) => t.id === taskId);
+    if (!target) return;
+    const { deletedAt: _deleted, ...restored } = target;
+    setTrashTasks((prev) => prev.filter((t) => t.id !== taskId));
+    setTasks((prev) => [...prev, restored]);
+  };
+
+  const handlePermanentDelete = (taskId: string) => {
+    setTrashTasks((prev) => prev.filter((t) => t.id !== taskId));
+  };
+
+  const handleEmptyTrash = () => {
+    setTrashTasks([]);
   };
 
   const handleSnoozeReminder = (taskId: string, minutes: number) => {
@@ -436,406 +505,534 @@ export default function App() {
   };
 
   const resetFilters = () => {
+    setViewMode('board');
     setFilters({
       subjectId: 'all',
       priority: 'all',
       completion: 'all',
       search: '',
+      dateISO: undefined,
+      onlyReminders: false,
     });
+  };
+
+  const handleApplySidebarPreset = (
+    preset: 'today' | 'completed' | 'high' | 'all' | 'reminders',
+  ) => {
+    setViewMode('board');
+    if (preset === 'today') {
+      setWeekOffset(0);
+      setFilters({
+        subjectId: 'all',
+        priority: 'all',
+        completion: 'all',
+        search: filters.search,
+        dateISO: todayISO,
+        onlyReminders: false,
+      });
+      return;
+    }
+    if (preset === 'completed') {
+      setFilters({
+        subjectId: 'all',
+        priority: 'all',
+        completion: 'completed',
+        search: filters.search,
+        dateISO: undefined,
+        onlyReminders: false,
+      });
+      return;
+    }
+    if (preset === 'high') {
+      setFilters({
+        subjectId: 'all',
+        priority: 'high',
+        completion: 'pending',
+        search: filters.search,
+        dateISO: undefined,
+        onlyReminders: false,
+      });
+      return;
+    }
+    if (preset === 'reminders') {
+      setFilters({
+        subjectId: 'all',
+        priority: 'all',
+        completion: 'all',
+        search: filters.search,
+        dateISO: undefined,
+        onlyReminders: true,
+      });
+      return;
+    }
+    setFilters({
+      subjectId: 'all',
+      priority: 'all',
+      completion: 'all',
+      search: '',
+      dateISO: undefined,
+      onlyReminders: false,
+    });
+  };
+
+  const handleSelectSubject = (subjectId: string) => {
+    setViewMode('board');
+    setFilters((prev) => ({
+      ...prev,
+      subjectId,
+      dateISO: undefined,
+      onlyReminders: false,
+      completion: 'all',
+    }));
+  };
+
+  const handleSelectPriorityTag = (priority: PriorityLevel | 'all') => {
+    setViewMode('board');
+    setFilters((prev) => ({
+      ...prev,
+      priority,
+      dateISO: undefined,
+      onlyReminders: false,
+    }));
+  };
+
+  const handleJumpToAnalytics = () => {
+    setViewMode('board');
+    window.setTimeout(() => {
+      const el = document.getElementById('analytics-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
   };
 
   return (
     <>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 print:hidden">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 sm:gap-8">
-          <a
-            href="#top"
-            className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap shrink-0"
-          >
-            برنامه‌ریز درسی هفتگی
-          </a>
+      <div className="min-h-screen flex bg-white dark:bg-[#121214] text-zinc-900 dark:text-zinc-100 print:hidden">
+        <PlannerSidebar
+          isOpen={sidebarOpen}
+          isMobileDrawerOpen={mobileDrawerOpen}
+          onCloseMobileDrawer={() => setMobileDrawerOpen(false)}
+          onToggleDesktopSidebar={() => setSidebarOpen(false)}
+          viewMode={viewMode}
+          onSelectViewMode={setViewMode}
+          filters={filters}
+          todayISO={todayISO}
+          counts={sidebarCounts}
+          trashCount={trashTasks.length}
+          subjects={subjects}
+          theme={theme}
+          onToggleTheme={() => setTheme((prev) => getNextTheme(prev))}
+          onOpenSubjectModal={() => setSubjectModalOpen(true)}
+          onApplyPreset={handleApplySidebarPreset}
+          onSelectSubject={handleSelectSubject}
+          onSelectPriorityTag={handleSelectPriorityTag}
+          onJumpToAnalytics={handleJumpToAnalytics}
+        />
 
-          <nav aria-label="ناوبری هفته" className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-300">
-            <button
-              type="button"
-              onClick={() => setWeekOffset((w) => w - 1)}
-              className="hover:text-slate-900 dark:hover:text-white transition-colors whitespace-nowrap shrink-0"
-            >
-              هفته قبل
-            </button>
-            <button
-              type="button"
-              onClick={() => setWeekOffset(0)}
-              className={`transition-colors whitespace-nowrap shrink-0 ${
-                weekOffset === 0
-                  ? 'text-blue-700 dark:text-blue-400 font-semibold'
-                  : 'hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              هفته جاری
-            </button>
-            <button
-              type="button"
-              onClick={() => setWeekOffset((w) => w + 1)}
-              className="hover:text-slate-900 dark:hover:text-white transition-colors whitespace-nowrap shrink-0"
-            >
-              هفته بعد
-            </button>
-            <button
-              type="button"
-              onClick={() => setSubjectModalOpen(true)}
-              className="hover:text-slate-900 dark:hover:text-white transition-colors whitespace-nowrap shrink-0"
-            >
-              مدیریت درس‌ها
-            </button>
-          </nav>
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* Crisp Apple-style top workspace bar: compact 1-row on mobile and desktop */}
+          <header className="sticky top-0 z-30 bg-white/95 dark:bg-[#121214]/95 backdrop-blur-sm border-b border-zinc-200/70 dark:border-zinc-800/80">
+            <div className="max-w-[1180px] mx-auto px-3 sm:px-8 h-14 flex items-center justify-between gap-2 sm:gap-3">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setMobileDrawerOpen(true)}
+                  aria-label="باز کردن منوی دسته‌بندی‌ها"
+                  className="lg:hidden p-2 rounded-xl text-zinc-700 dark:text-zinc-200 hover:bg-[#F4F4F6] dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <Menu className="w-5 h-5" aria-hidden="true" />
+                </button>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setTheme((prev) => getNextTheme(prev))}
-              aria-label={theme === 'dark' ? 'تغییر به حالت روشن' : 'تغییر به حالت تاریک'}
-              title={theme === 'dark' ? 'حالت روشن' : 'حالت تاریک'}
-              className="inline-flex items-center justify-center p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-400" aria-hidden="true" />
-              ) : (
-                <Moon className="w-4 h-4 text-slate-700" aria-hidden="true" />
-              )}
-            </button>
+                {!sidebarOpen && (
+                  <button
+                    type="button"
+                    onClick={() => setSidebarOpen(true)}
+                    aria-label="نمایش نوار کناری"
+                    title="نمایش نوار کناری"
+                    className="hidden lg:inline-flex p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-[#F4F4F6] dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    <PanelRightOpen className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                )}
 
-            <button
-              type="button"
-              onClick={() => handleOpenNewModal(todayISO)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
-            >
-              <Plus className="w-4 h-4" aria-hidden="true" />
-              افزودن تکلیف
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main id="top" className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        <section aria-label="خلاصه هفته و تاریخ" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                  {weekSpan.jalaliSpan}
-                </h1>
-                <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
-                  /
-                </span>
-                <span dir="ltr" className="text-sm font-mono-nums text-slate-500 dark:text-slate-400">
-                  {weekSpan.gregorianSpan}
-                </span>
+                <div
+                  className="inline-flex items-center gap-0.5 bg-[#F4F4F6] dark:bg-zinc-800/80 p-1 rounded-xl"
+                  role="group"
+                  aria-label="ناوبری هفته"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset((w) => w - 1)}
+                    aria-label="هفته قبل"
+                    title="هفته قبل"
+                    className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset(0)}
+                    className={`px-2 sm:px-2.5 py-1 text-xs font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 ${
+                      weekOffset === 0
+                        ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs'
+                        : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white'
+                    }`}
+                  >
+                    هفته جاری
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset((w) => w + 1)}
+                    aria-label="هفته بعد"
+                    title="هفته بعد"
+                    className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </div>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-2">
-                <span>امروز: {formatJalaliLong(todayJalali)}</span>
-                <span aria-hidden="true">·</span>
-                <span dir="ltr" className="font-mono-nums">
-                  {formatGregorianEnShort(todayGregorian)}
-                </span>
-              </p>
+
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 justify-end">
+                <div className="hidden md:flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setPrintModalOpen(true)}
+                    title="چاپ / ذخیره PDF"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-zinc-700 transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <Printer className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>چاپ PDF</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleExportBackup}
+                    title="پشتیبان‌گیری JSON"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-zinc-700 transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>خروجی JSON</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setImportModalOpen(true)}
+                    title="ورودی و بازیابی JSON"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-zinc-700 transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <Upload className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>ورودی JSON</span>
+                  </button>
+
+                  <PWAInstallButton />
+
+                  {notificationPermission !== 'unsupported' && (
+                    <button
+                      type="button"
+                      onClick={handleRequestNotification}
+                      disabled={notificationPermission === 'granted'}
+                      aria-label={
+                        notificationPermission === 'granted'
+                          ? 'اعلان مرورگر فعال است'
+                          : 'فعال‌سازی اعلان مرورگر'
+                      }
+                      title={
+                        notificationPermission === 'granted'
+                          ? 'اعلان مرورگر فعال است'
+                          : 'فعال‌سازی اعلان مرورگر'
+                      }
+                      className={`inline-flex items-center gap-1.5 p-2 rounded-xl transition-colors shrink-0 ${
+                        notificationPermission === 'granted'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 cursor-default'
+                          : 'bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200/80 dark:hover:bg-zinc-700'
+                      }`}
+                    >
+                      <Bell className="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="relative flex-1 sm:flex-initial min-w-[120px] sm:w-48 md:w-52">
+                  <Search
+                    className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="search"
+                    value={filters.search}
+                    onChange={(e) => {
+                      setViewMode('board');
+                      setFilters((prev) => ({ ...prev, search: e.target.value }));
+                    }}
+                    placeholder="جستجو..."
+                    aria-label="جستجو در تکالیف"
+                    className="w-full pr-8 pl-2.5 py-1.5 text-xs sm:text-sm bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 rounded-xl focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-rose-500 border border-transparent focus:border-zinc-200 dark:focus:border-zinc-700"
+                  />
+                </div>
+              </div>
             </div>
+          </header>
 
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg md:hidden">
-                <button
-                  type="button"
-                  onClick={() => setWeekOffset((w) => w - 1)}
-                  aria-label="هفته قبل"
-                  className="p-1.5 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWeekOffset(0)}
-                  className="px-2.5 py-1 text-xs font-medium text-slate-800 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors whitespace-nowrap"
-                >
-                  هفته جاری
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWeekOffset((w) => w + 1)}
-                  aria-label="هفته بعد"
-                  className="p-1.5 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-md transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSubjectModalOpen(true)}
-                className="md:hidden px-3 py-1.5 text-xs font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 whitespace-nowrap"
-              >
-                مدیریت درس‌ها
-              </button>
-
+          <main id="top" className="flex-1 max-w-[1180px] w-full mx-auto px-4 sm:px-8 py-5 pb-24 space-y-5">
+            {/* Mobile-only compact utility action strip (non-sticky so header stays <= 56px) */}
+            <div className="flex md:hidden flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setPrintModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200"
               >
                 <Printer className="w-3.5 h-3.5" aria-hidden="true" />
-                چاپ / ذخیره PDF
+                چاپ PDF
               </button>
-
               <button
                 type="button"
                 onClick={handleExportBackup}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200"
               >
                 <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                پشتیبان‌گیری JSON
+                خروجی JSON
               </button>
-
               <button
                 type="button"
                 onClick={() => setImportModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200"
               >
                 <Upload className="w-3.5 h-3.5" aria-hidden="true" />
                 ورودی JSON
               </button>
-
               <PWAInstallButton />
-
-              {notificationPermission !== 'unsupported' && (
-                <button
-                  type="button"
-                  onClick={handleRequestNotification}
-                  disabled={notificationPermission === 'granted'}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap shrink-0 ${
-                    notificationPermission === 'granted'
-                      ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 cursor-default'
-                      : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  <Bell className="w-3.5 h-3.5" aria-hidden="true" />
-                  {notificationPermission === 'granted' ? 'اعلان مرورگر فعال است' : 'فعال‌سازی اعلان مرورگر'}
-                </button>
-              )}
             </div>
-          </div>
+            {/* Coral Red Main Display Heading matching NEW PROJECT in reference */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+              <div className="space-y-1">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#D9443C] dark:text-[#F87171]">
+                  {boardHeading}
+                </h1>
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    {weekSpan.jalaliSpan}
+                  </span>
+                  <span aria-hidden="true">/</span>
+                  <span dir="ltr" className="font-mono-nums">
+                    {weekSpan.gregorianSpan}
+                  </span>
+                  <span aria-hidden="true">·</span>
+                  <span>امروز: {formatJalaliLong(todayJalali)}</span>
+                  <span aria-hidden="true">·</span>
+                  <span dir="ltr" className="font-mono-nums">
+                    {formatGregorianEnShort(todayGregorian)}
+                  </span>
+                </div>
+              </div>
 
-          {backupFeedback && (
-            <p
-              role="status"
-              aria-live="polite"
-              className="text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <span>{backupFeedback}</span>
-            </p>
-          )}
+              <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 tabular-nums shrink-0">
+                <span>
+                  کل هفته: <strong className="text-zinc-900 dark:text-zinc-100">{toPersianDigits(weeklyStats.total)}</strong>
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>
+                  تکمیل‌شده: <strong className="text-emerald-700 dark:text-emerald-400">{toPersianDigits(weeklyStats.completed)}</strong>
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>
+                  باقی‌مانده: <strong className="text-zinc-900 dark:text-zinc-100">{toPersianDigits(weeklyStats.pending)}</strong>
+                </span>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-slate-200 dark:border-slate-800 pt-4">
-            <div className="border-b border-l sm:border-b-0 border-slate-200 dark:border-slate-800 pb-3 pl-4 sm:py-0">
-              <p className="text-xs text-slate-500 dark:text-slate-400">کل تکالیف هفته</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums mt-0.5">
-                {toPersianDigits(weeklyStats.total)}
-              </p>
-            </div>
-            <div className="border-b sm:border-b-0 sm:border-l border-slate-200 dark:border-slate-800 pb-3 pr-4 sm:py-0 sm:px-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400">تکمیل‌شده</p>
-              <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums mt-0.5">
-                {toPersianDigits(weeklyStats.completed)}
-              </p>
-            </div>
-            <div className="border-l border-slate-200 dark:border-slate-800 pt-3 pl-4 sm:py-0 sm:px-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400">باقی‌مانده</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums mt-0.5">
-                {toPersianDigits(weeklyStats.pending)}
-              </p>
-            </div>
-            <div className="pt-3 pr-4 sm:py-0 sm:pr-4">
-              <p className="text-xs text-slate-500 dark:text-slate-400">یادآورهای فعال</p>
-              <p className="text-2xl font-bold text-blue-700 dark:text-blue-400 tabular-nums mt-0.5">
-                {toPersianDigits(weeklyStats.activeReminders)}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <ReminderBanner
-          dueTasks={dueReminders}
-          subjectsById={subjectsById}
-          onComplete={handleToggleComplete}
-          onSnooze={handleSnoozeReminder}
-          onDismiss={handleDismissReminder}
-        />
-
-        <WeeklyProgressChart
-          summary={weeklyProgressSummary}
-          theme={theme}
-          onAddTask={() => handleOpenNewModal(weekDays[0]?.dateISO ?? todayISO)}
-        />
-
-        <section aria-label="فیلتر و جستجو" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
-          <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
-            <div className="relative flex-1 min-w-0">
-              <Search
-                className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                aria-hidden="true"
-              />
-              <input
-                type="search"
-                value={filters.search}
-                onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-                placeholder="جستجو در عنوان یا یادداشت تکالیف..."
-                aria-label="جستجو در تکالیف"
-                className="w-full pr-9 pl-3 py-2 text-sm bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-slate-200 dark:border-slate-700 rounded-lg focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-              />
+                {(hasActiveFilters || viewMode === 'trash') && (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                    نمایش کل هفته
+                  </button>
+                )}
+              </div>
             </div>
 
-            <select
-              value={filters.subjectId}
-              onChange={(e) => setFilters((prev) => ({ ...prev, subjectId: e.target.value }))}
-              aria-label="فیلتر بر اساس درس"
-              className="lg:max-w-[170px] truncate px-3 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-600"
-            >
-              <option value="all">همه درس‌ها</option>
-              {subjects.map((sub) => (
-                <option key={sub.id} value={sub.id}>
-                  {sub.name}
-                </option>
-              ))}
-            </select>
-
-            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0" role="group" aria-label="فیلتر اولویت">
-              {(
-                [
-                  { value: 'all', label: 'همه اولویت‌ها' },
-                  { value: 'high', label: 'بالا' },
-                  { value: 'medium', label: 'متوسط' },
-                  { value: 'low', label: 'عادی' },
-                ] as const
-              ).map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => setFilters((prev) => ({ ...prev, priority: item.value }))}
-                  className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
-                    filters.priority === item.value
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg shrink-0" role="group" aria-label="فیلتر وضعیت">
-              {(
-                [
-                  { value: 'all', label: 'همه' },
-                  { value: 'pending', label: 'باقی‌مانده' },
-                  { value: 'completed', label: 'انجام‌شده' },
-                ] as const
-              ).map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  onClick={() => setFilters((prev) => ({ ...prev, completion: item.value }))}
-                  className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
-                    filters.completion === item.value
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors whitespace-nowrap shrink-0"
+            {backupFeedback && (
+              <p
+                role="status"
+                aria-live="polite"
+                className="text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5"
               >
-                <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
-                پاک کردن فیلترها
-              </button>
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span>{backupFeedback}</span>
+              </p>
             )}
-          </div>
-        </section>
 
-        {hasActiveFilters && totalMatchingInWeek === 0 ? (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-10 text-center space-y-3">
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              در این هفته هیچ تکلیفی مطابق فیلترهای انتخاب‌شده یافت نشد.
-            </p>
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              نمایش همه تکالیف هفته
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4" data-testid="weekly-list">
-            {weekDays.map((day) => (
-              <WeeklyDaySection
-                key={day.dateISO}
-                day={day}
-                isToday={day.dateISO === todayISO}
-                tasks={tasksByDate[day.dateISO] ?? []}
-                subjects={subjects}
-                subjectsById={subjectsById}
-                hasActiveFilters={hasActiveFilters}
-                onQuickAdd={handleQuickAdd}
-                onOpenModalForDay={(iso) => handleOpenNewModal(iso)}
-                onToggleComplete={handleToggleComplete}
-                onToggleReminder={handleToggleReminder}
-                onEditTask={handleEditTask}
-                onDeleteTask={handleDeleteTask}
-              />
-            ))}
-          </div>
-        )}
-      </main>
+            {viewMode === 'trash' ? (
+              <section aria-label="تکالیف اخیراً حذف‌شده" className="space-y-4">
+                <div className="flex items-center justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    موارد حذف‌شده در اینجا نگهداری می‌شوند تا در صورت نیاز بازیابی شوند.
+                  </p>
+                  {trashTasks.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleEmptyTrash}
+                      className="px-3 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors whitespace-nowrap"
+                    >
+                      خالی کردن سطل
+                    </button>
+                  )}
+                </div>
 
-      <TaskModal
-        isOpen={taskModalOpen}
-        initialDateISO={modalInitialDateISO}
-        editingTask={editingTask}
-        subjects={subjects}
-        onClose={() => setTaskModalOpen(false)}
-        onSave={handleSaveTask}
-      />
+                {trashTasks.length === 0 ? (
+                  <div className="bg-[#F4F4F6]/80 dark:bg-zinc-900/60 rounded-2xl p-10 text-center space-y-2">
+                    <Trash2 className="w-6 h-6 text-zinc-400 mx-auto" aria-hidden="true" />
+                    <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                      مورد حذف‌شده‌ای وجود ندارد.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {trashTasks.map((task) => {
+                      const sub = subjectsById[task.subjectId];
+                      return (
+                        <div
+                          key={task.id}
+                          className="bg-[#F2F2F7] dark:bg-zinc-800/80 rounded-xl p-3.5 flex flex-col justify-between gap-3"
+                        >
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                              {task.title}
+                            </p>
+                            {task.notes && (
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400">{task.notes}</p>
+                            )}
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                              {sub?.name ?? 'عمومی'} · {formatJalaliLong(isoToJalali(task.dateISO))}
+                            </p>
+                          </div>
 
-      <SubjectModal
-        isOpen={subjectModalOpen}
-        subjects={subjects}
-        onClose={() => setSubjectModalOpen(false)}
-        onAddSubject={handleAddSubject}
-        onDeleteSubject={handleDeleteSubject}
-      />
+                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-200/70 dark:border-zinc-700/70">
+                            <button
+                              type="button"
+                              onClick={() => handleRestoreFromTrash(task.id)}
+                              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                            >
+                              بازیابی
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handlePermanentDelete(task.id)}
+                              className="px-3 py-1.5 text-xs font-medium rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-100/70 dark:hover:bg-rose-950/50 transition-colors"
+                            >
+                              حذف دائمی
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            ) : (
+              <>
+                <ReminderBanner
+                  dueTasks={dueReminders}
+                  subjectsById={subjectsById}
+                  onComplete={handleToggleComplete}
+                  onSnooze={handleSnoozeReminder}
+                  onDismiss={handleDismissReminder}
+                />
 
-      <PrintScheduleModal
-        isOpen={printModalOpen}
-        options={printOptions}
-        data={printableData}
-        onChangeOptions={setPrintOptions}
-        onClose={() => setPrintModalOpen(false)}
-        onTriggerPrint={handleTriggerPrint}
-      />
+                {hasActiveFilters && totalMatchingInWeek === 0 ? (
+                  <div className="bg-[#F4F4F6]/80 dark:bg-zinc-900/60 rounded-2xl p-10 text-center space-y-3">
+                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      در این هفته هیچ تکلیفی مطابق فیلترهای انتخاب‌شده یافت نشد.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 transition-colors"
+                    >
+                      نمایش همه تکالیف هفته
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-7 gap-y-8"
+                    data-testid="weekly-list"
+                  >
+                    {visibleWeekDays.map((day) => (
+                      <WeeklyDaySection
+                        key={day.dateISO}
+                        day={day}
+                        isToday={day.dateISO === todayISO}
+                        tasks={tasksByDate[day.dateISO] ?? []}
+                        subjects={subjects}
+                        subjectsById={subjectsById}
+                        hasActiveFilters={hasActiveFilters}
+                        onQuickAdd={handleQuickAdd}
+                        onOpenModalForDay={(iso) => handleOpenNewModal(iso)}
+                        onToggleComplete={handleToggleComplete}
+                        onToggleReminder={handleToggleReminder}
+                        onEditTask={handleEditTask}
+                        onDeleteTask={handleDeleteTask}
+                      />
+                    ))}
+                  </div>
+                )}
 
-      <ImportBackupModal
-        isOpen={importModalOpen}
-        existingSubjects={subjects}
-        onClose={() => setImportModalOpen(false)}
-        onApplyImport={handleApplyImport}
-      />
+                <div className="pt-4">
+                  <WeeklyProgressChart
+                    summary={weeklyProgressSummary}
+                    theme={theme}
+                    onAddTask={() => handleOpenNewModal(weekDays[0]?.dateISO ?? todayISO)}
+                  />
+                </div>
+              </>
+            )}
+          </main>
+        </div>
+
+        {/* Floating Coral Red '+' FAB matching reference bottom corner button */}
+        <button
+          type="button"
+          onClick={() => handleOpenNewModal(todayISO)}
+          aria-label="افزودن تکلیف جدید"
+          title="افزودن تکلیف جدید"
+          className="fixed bottom-6 left-6 z-40 w-12 h-12 rounded-full bg-[#E14842] hover:bg-[#C93933] text-white shadow-lg shadow-rose-600/25 inline-flex items-center justify-center transition-transform duration-150 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-rose-600 dark:focus-visible:ring-offset-zinc-950"
+        >
+          <Plus className="w-6 h-6" aria-hidden="true" />
+        </button>
+
+        <TaskModal
+          isOpen={taskModalOpen}
+          initialDateISO={modalInitialDateISO}
+          editingTask={editingTask}
+          subjects={subjects}
+          onClose={() => setTaskModalOpen(false)}
+          onSave={handleSaveTask}
+        />
+
+        <SubjectModal
+          isOpen={subjectModalOpen}
+          subjects={subjects}
+          onClose={() => setSubjectModalOpen(false)}
+          onAddSubject={handleAddSubject}
+          onDeleteSubject={handleDeleteSubject}
+        />
+
+        <PrintScheduleModal
+          isOpen={printModalOpen}
+          options={printOptions}
+          data={printableData}
+          onChangeOptions={setPrintOptions}
+          onClose={() => setPrintModalOpen(false)}
+          onTriggerPrint={handleTriggerPrint}
+        />
+
+        <ImportBackupModal
+          isOpen={importModalOpen}
+          existingSubjects={subjects}
+          onClose={() => setImportModalOpen(false)}
+          onApplyImport={handleApplyImport}
+        />
       </div>
 
       <div className="hidden print:block bg-white" data-testid="printable-schedule-root">

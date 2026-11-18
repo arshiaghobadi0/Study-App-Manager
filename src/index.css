@@ -20,6 +20,25 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Subtle custom scrollbars matching the clean workspace */
+.planner-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.planner-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.planner-scroll::-webkit-scrollbar-thumb {
+  background: rgba(113, 113, 122, 0.25);
+  border-radius: 9999px;
+}
+
+.planner-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(113, 113, 122, 0.45);
+}
+
 @page {
   size: A4 portrait;
   margin: 12mm;

@@ -21,6 +21,7 @@ export interface StudyTask {
   /** ISO timestamp when reminder was dismissed or completed, or snoozed-until HH:mm */
   reminderDismissedAt?: string;
   snoozedUntilISO?: string;
+  deletedAt?: string;
   createdAt: string;
 }
 
@@ -31,4 +32,6 @@ export interface TaskFilterState {
   priority: PriorityLevel | 'all';
   completion: CompletionFilter;
   search: string;
+  dateISO?: string;
+  onlyReminders?: boolean;
 }

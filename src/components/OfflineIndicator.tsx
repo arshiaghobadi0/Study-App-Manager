@@ -1,4 +1,3 @@
-import { WifiOff } from 'lucide-react';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 export function OfflineIndicator() {
@@ -12,10 +11,12 @@ export function OfflineIndicator() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-4 left-4 z-40 inline-flex items-center gap-2 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/90 px-3.5 py-2 text-xs font-medium text-amber-900 dark:text-amber-200 shadow-lg print:hidden"
+      className="oc-elevated-emphasis accent-bar-coral fixed bottom-4 left-4 z-40 inline-flex items-center gap-2 px-3.5 py-2 text-[11.5px] font-medium text-[var(--text-primary)] print:hidden"
     >
-      <WifiOff className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-      <span>حالت آفلاین — برنامه با داده‌های ذخیره‌شده در دستگاه کار می‌کند</span>
+      <span dir="ltr" className="font-bold text-[#ff9f0a]">
+        [OFFLINE]
+      </span>
+      <span>برنامه با داده‌های ذخیره‌شده در دستگاه کار می‌کند</span>
     </div>
   );
 }

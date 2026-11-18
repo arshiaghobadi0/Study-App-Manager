@@ -22,7 +22,7 @@ export function ReminderBanner({
   return (
     <section
       aria-label="یادآورهای فعال"
-      className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/70 rounded-xl p-4 space-y-3"
+      className="bg-amber-50/90 dark:bg-amber-950/35 border border-amber-200/90 dark:border-amber-800/70 rounded-2xl p-4 space-y-3"
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
@@ -42,8 +42,8 @@ export function ReminderBanner({
               className="py-2.5 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{task.title}</p>
-                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{task.title}</p>
+                <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300 mt-0.5">
                   {subject && <span>{subject.name}</span>}
                   {subject && <span aria-hidden="true">·</span>}
                   <span className="font-mono-nums">ساعت {toPersianDigits(task.reminderTime)}</span>
@@ -54,7 +54,7 @@ export function ReminderBanner({
                 <button
                   type="button"
                   onClick={() => onComplete(task.id)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors whitespace-nowrap shrink-0"
                 >
                   <Check className="w-3.5 h-3.5" aria-hidden="true" />
                   انجام شد
@@ -62,7 +62,7 @@ export function ReminderBanner({
                 <button
                   type="button"
                   onClick={() => onSnooze(task.id, 10)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-white dark:bg-zinc-900 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors whitespace-nowrap shrink-0"
                 >
                   <Clock className="w-3.5 h-3.5" aria-hidden="true" />
                   ۱۰ دقیقه بعد
@@ -71,7 +71,7 @@ export function ReminderBanner({
                   type="button"
                   onClick={() => onDismiss(task.id)}
                   aria-label={`بستن یادآور '${task.title}'`}
-                  className="inline-flex items-center justify-center p-1.5 rounded-lg text-amber-800 dark:text-amber-300 hover:bg-amber-200/60 dark:hover:bg-amber-900/50 transition-colors"
+                  className="inline-flex items-center justify-center p-1.5 rounded-xl text-amber-800 dark:text-amber-300 hover:bg-amber-200/60 dark:hover:bg-amber-900/50 transition-colors"
                 >
                   <X className="w-4 h-4" aria-hidden="true" />
                 </button>

@@ -56,6 +56,12 @@ export function filterTasks(tasks: StudyTask[], filters: TaskFilterState): Study
   const normalizedQuery = filters.search.trim().toLowerCase();
 
   return tasks.filter((task) => {
+    if (filters.dateISO && task.dateISO !== filters.dateISO) {
+      return false;
+    }
+    if (filters.onlyReminders && (!task.reminderEnabled || task.completed)) {
+      return false;
+    }
     if (filters.subjectId !== 'all' && task.subjectId !== filters.subjectId) {
       return false;
     }
@@ -105,6 +111,59 @@ export function computeWeeklyStats(tasks: StudyTask[], weekDateISOs: string[]): 
     completed,
     pending: weekTasks.length - completed,
     activeReminders,
+  };
+}
+
+export interface SidebarCounts {
+  todayPending: number;
+  weekTotal: number;
+  weekCompleted: number;
+  weekHighPriorityPending: number;
+  weekActiveReminders: number;
+  bySubject: Record<string, number>;
+}
+
+export function computeSidebarCounts(
+  tasks: StudyTask[],
+  weekDateISOs: string[],
+  todayISO: string,
+): SidebarCounts {
+  const dateSet = new Set(weekDateISOs);
+  let todayPending = 0;
+  let weekTotal = 0;
+  let weekCompleted = 0;
+  let weekHighPriorityPending = 0;
+  let weekActiveReminders = 0;
+  const bySubject: Record<string, number> = {};
+
+  for (const task of tasks) {
+    if (task.dateISO === todayISO && !task.completed) {
+      todayPending += 1;
+    }
+    if (!dateSet.has(task.dateISO)) continue;
+
+    weekTotal += 1;
+    bySubject[task.subjectId] = (bySubject[task.subjectId] ?? 0) + 1;
+
+    if (task.completed) {
+      weekCompleted += 1;
+    } else {
+      if (task.priority === 'high') {
+        weekHighPriorityPending += 1;
+      }
+      if (task.reminderEnabled) {
+        weekActiveReminders += 1;
+      }
+    }
+  }
+
+  return {
+    todayPending,
+    weekTotal,
+    weekCompleted,
+    weekHighPriorityPending,
+    weekActiveReminders,
+    bySubject,
   };
 }
 

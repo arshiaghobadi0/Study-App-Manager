@@ -3,6 +3,7 @@ import { createInitialSeedTasks, DEFAULT_SUBJECTS } from './tasks';
 
 const TASKS_STORAGE_KEY = 'study_planner_tasks_v1';
 const SUBJECTS_STORAGE_KEY = 'study_planner_subjects_v1';
+const TRASH_STORAGE_KEY = 'study_planner_trash_v1';
 
 export function loadTasks(): StudyTask[] {
   try {
@@ -25,6 +26,28 @@ export function loadTasks(): StudyTask[] {
 export function saveTasks(tasks: StudyTask[]): void {
   try {
     window.localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
+  } catch {
+    // ignore quota errors
+  }
+}
+
+export function loadTrash(): StudyTask[] {
+  try {
+    const raw = window.localStorage.getItem(TRASH_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {
+    // ignore corrupted trash storage
+  }
+  return [];
+}
+
+export function saveTrash(trash: StudyTask[]): void {
+  try {
+    window.localStorage.setItem(TRASH_STORAGE_KEY, JSON.stringify(trash));
   } catch {
     // ignore quota errors
   }
