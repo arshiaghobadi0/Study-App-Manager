@@ -9,6 +9,7 @@ import {
   expandTaskDatesForWeek,
   filterTasks,
   getDueReminderTasks,
+  removeTasksByScope,
   sortTasksForDay,
 } from './tasks';
 import { getWeekDays } from './jalali';
@@ -155,4 +156,57 @@ test('expandTaskDatesForWeek returns single date or all 7 days of the Iranian we
   assert.deepEqual(expandTaskDatesForWeek('2026-11-19', true), expectedWeek);
   assert.deepEqual(expandTaskDatesForWeek('2026-11-14', true), expectedWeek);
   assert.deepEqual(expandTaskDatesForWeek('2026-11-20', true), expectedWeek);
+});
+
+test('removeTasksByScope deletes all tasks or week tasks with soft/permanent trash modes', () => {
+  const mixedTasks: StudyTask[] = [
+    ...sampleTasks,
+    {
+      id: 'next-week-1',
+      title: 'تکلیف هفته بعد',
+      dateISO: '2026-11-22',
+      subjectId: 'math',
+      priority: 'medium',
+      completed: false,
+      reminderEnabled: false,
+      reminderTime: '18:00',
+      createdAt: '2026-11-22T08:00:00Z',
+    },
+  ];
+  const currentWeekISOs = getWeekDays(0, '2026-11-15').map((d) => d.dateISO);
+
+  // Soft delete all
+  const allSoft = removeTasksByScope(mixedTasks, [], {
+    scope: 'all',
+    weekDateISOs: currentWeekISOs,
+    permanent: false,
+    deletedAtISO: '2026-11-19T10:00:00Z',
+  });
+  assert.equal(allSoft.nextTasks.length, 0);
+  assert.equal(allSoft.removedCount, 4);
+  assert.equal(allSoft.nextTrash.length, 4);
+  assert.equal(allSoft.nextTrash[0].deletedAt, '2026-11-19T10:00:00Z');
+
+  // Permanent delete all
+  const allPerm = removeTasksByScope(mixedTasks, [], {
+    scope: 'all',
+    weekDateISOs: currentWeekISOs,
+    permanent: true,
+  });
+  assert.equal(allPerm.nextTasks.length, 0);
+  assert.equal(allPerm.removedCount, 4);
+  assert.equal(allPerm.nextTrash.length, 0);
+
+  // Week-only delete preserves tasks in other weeks
+  const weekOnly = removeTasksByScope(mixedTasks, [], {
+    scope: 'week',
+    weekDateISOs: currentWeekISOs,
+    permanent: false,
+  });
+  assert.equal(weekOnly.removedCount, 3);
+  assert.deepEqual(
+    weekOnly.nextTasks.map((t) => t.id),
+    ['next-week-1'],
+  );
+  assert.equal(weekOnly.nextTrash.length, 3);
 });

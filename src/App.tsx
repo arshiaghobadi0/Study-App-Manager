@@ -14,6 +14,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ConfirmDeleteAllModal } from './components/ConfirmDeleteAllModal';
 import { ImportBackupModal } from './components/ImportBackupModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { PlannerSidebar, type WorkspaceViewMode } from './components/PlannerSidebar';
@@ -57,6 +58,7 @@ import {
   expandTaskDatesForWeek,
   filterTasks,
   getDueReminderTasks,
+  removeTasksByScope,
   sortTasksForDay,
 } from './utils/tasks';
 import {
@@ -95,6 +97,7 @@ export default function App() {
   const [subjectModalOpen, setSubjectModalOpen] = useState(false);
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false);
   const [printOptions, setPrintOptions] = useState<PrintScheduleOptions>({
     includeCompleted: true,
     includeNotes: true,
@@ -508,6 +511,30 @@ export default function App() {
     setTrashTasks([]);
   };
 
+  const handleConfirmDeleteAll = ({
+    scope,
+    permanent,
+  }: {
+    scope: 'all' | 'week';
+    permanent: boolean;
+  }) => {
+    const result = removeTasksByScope(tasks, trashTasks, {
+      scope,
+      weekDateISOs,
+      permanent,
+    });
+    if (result.removedCount === 0) return;
+    setTasks(result.nextTasks);
+    setTrashTasks(result.nextTrash);
+    if (permanent) {
+      showTimedFeedback(`${toPersianDigits(result.removedCount)} تکلیف به‌صورت دائمی حذف شد.`);
+    } else {
+      showTimedFeedback(
+        `${toPersianDigits(result.removedCount)} تکلیف حذف و به بخش «اخیراً حذف‌شده» منتقل شد.`,
+      );
+    }
+  };
+
   const handleSnoozeReminder = (taskId: string, minutes: number) => {
     const until = computeSnoozeUntilISO(minutes);
     setTasks((prev) =>
@@ -890,6 +917,17 @@ export default function App() {
                     نمایش کل هفته
                   </button>
                 )}
+
+                {viewMode === 'board' && tasks.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteAllModalOpen(true)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50/80 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-950/70 rounded-lg transition-colors whitespace-nowrap"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                    حذف همه تکالیف
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1074,6 +1112,15 @@ export default function App() {
           existingSubjects={subjects}
           onClose={() => setImportModalOpen(false)}
           onApplyImport={handleApplyImport}
+        />
+
+        <ConfirmDeleteAllModal
+          isOpen={deleteAllModalOpen}
+          totalTaskCount={tasks.length}
+          currentWeekTaskCount={weeklyStats.total}
+          weekJalaliSpan={weekSpan.jalaliSpan}
+          onClose={() => setDeleteAllModalOpen(false)}
+          onConfirm={handleConfirmDeleteAll}
         />
       </div>
 

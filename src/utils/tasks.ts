@@ -214,6 +214,42 @@ export function expandTaskDatesForWeek(
   return Array.from({ length: 7 }, (_, index) => addDaysISO(saturdayISO, index));
 }
 
+export function removeTasksByScope(
+  tasks: StudyTask[],
+  trashTasks: StudyTask[],
+  options: {
+    scope: 'all' | 'week';
+    weekDateISOs: string[];
+    permanent: boolean;
+    deletedAtISO?: string;
+  },
+): { nextTasks: StudyTask[]; nextTrash: StudyTask[]; removedCount: number } {
+  const { scope, weekDateISOs, permanent, deletedAtISO = new Date().toISOString() } = options;
+  const weekSet = new Set(weekDateISOs);
+
+  const removed: StudyTask[] = [];
+  const nextTasks: StudyTask[] = [];
+
+  for (const task of tasks) {
+    const shouldRemove = scope === 'all' || weekSet.has(task.dateISO);
+    if (shouldRemove) {
+      removed.push(task);
+    } else {
+      nextTasks.push(task);
+    }
+  }
+
+  const nextTrash = permanent
+    ? trashTasks
+    : [...removed.map((t) => ({ ...t, deletedAt: deletedAtISO })), ...trashTasks];
+
+  return {
+    nextTasks,
+    nextTrash,
+    removedCount: removed.length,
+  };
+}
+
 export function createInitialSeedTasks(anchorISO: string = getTodayISO()): StudyTask[] {
   const sat = getSaturdayOfWeekISO(anchorISO);
   const nowISO = new Date().toISOString();
