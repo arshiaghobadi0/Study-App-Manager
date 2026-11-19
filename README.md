@@ -50,17 +50,19 @@
 
 ### ✨ امکانات کلیدی
 
+- **رابط کاربری دوپانله مدرن (الهام‌گرفته از Reminders)**: نوار کناری جمع‌شونده شامل ۴ کاشی آماری سریع (**امروز**، **تکمیل‌شده**، **اولویت بالا**، **همه هفته**)، فهرست دروس با شمارنده زنده، بخش **اخیراً حذف‌شده**، برچسب‌های اولویت (`#فوری`، `#متوسط`، `#عادی`)، گرید ۳ ستونه روزهای هفته و دکمه شناور افزودن تکلیف.
 - **برنامه‌ریزی هفتگی (شنبه تا جمعه)**: دسته‌بندی تکالیف بر اساس ۷ روز هفته ایرانی همراه با دکمه‌های جابه‌جایی سریع بین «هفته قبل»، «هفته جاری» و «هفته بعد» و نمایش برچسب «امروز».
 - **تقویم دوگانه شمسی و میلادی**: نمایش دقیق و هم‌زمان تاریخ شمسی (با محاسبه دقیق سال‌های کبیسه در هر دو لایه TypeScript و Rust) در کنار تاریخ میلادی برای بازه هفته و تک‌تک روزها.
-- **مدیریت تکالیف و افزودن سریع**: ایجاد، ویرایش و حذف تکالیف با عنوان، یادداشت، انتخاب درس، اولویت سه‌سطحی (**بالا**، **متوسط**، **عادی**) و افزودن سریع درون‌خطی (`افزودن سریع`) برای هر روز.
+- **مدیریت تکالیف، افزودن سریع و ثبت برای کل هفته**: ایجاد، ویرایش و حذف تکالیف با عنوان، یادداشت، انتخاب درس، اولویت سه‌سطحی (**بالا**، **متوسط**، **عادی**)، افزودن سریع درون‌خطی برای هر روز و تیک **«ثبت برای تمام روزهای هفته (شنبه تا جمعه)»** در هر دو بخش افزودن سریع و پنجره افزودن تکلیف.
+- **سطل بازیافت (اخیراً حذف‌شده) و حذف همگانی امن**: انتقال تکالیف حذف‌شده به بخش **«اخیراً حذف‌شده»** با قابلیت بازیابی یا حذف دائمی؛ همچنین دکمه **«حذف همه تکالیف»** همراه با پنجره تأیید امن، انتخاب دامنه (همه تکالیف یا فقط هفته جاری) و گزینه حذف دائمی.
 - **دسته‌بندی موضوعی دروس**: امکان ساخت، ویرایش و حذف درس‌ها به همراه انتخاب رنگ اختصاصی (`SubjectModal`).
 - **سیستم یادآور هوشمند**: تنظیم ساعت یادآور (`HH:mm`) برای هر تکلیف، بنر اعلان‌های سررسیدشده در بالای صفحه، پخش صدای ملایم هشدار (Web Audio API)، تعویق ۱۰ دقیقه‌ای (Snooze) و پشتیبانی از اعلان مرورگر (`Notification API`).
-- **فیلتر و جستجوی آنی**: جستجو در عنوان و یادداشت تکالیف و فیلتر هم‌زمان بر اساس درس، سطح اولویت و وضعیت (همه / باقی‌مانده / انجام‌شده).
+- **فیلتر و جستجوی آنی**: جستجو در عنوان و یادداشت تکالیف و فیلتر هم‌زمان بر اساس کاشی‌های سریع، درس، یادآورهای فعال و برچسب‌های اولویت.
 - **نمودار تحلیلی پیشرفت هفتگی**: رسم نمودار میله‌ای تعاملی با **Recharts** برای مقایسه تکالیف تکمیل‌شده در برابر باقی‌مانده به تفکیک روزهای شنبه تا جمعه همراه با نرخ پیشرفت هفته و Tooltip دوگانه تاریخ.
-- **چاپ و خروجی PDF استاندارد**: پیش‌نمایش صفحه چاپ A4 با چیدمان راست‌به‌چپ (`@media print`)، گزینه‌های نمایش/مخفی‌سازی تکالیف انجام‌شده و یادداشت‌ها و ذخیره مستقیم به صورت PDF.
-- **حالت تاریک (Dark Mode)**: دکمه تغییر تم در هدر با ذخیره‌سازی انتخاب کاربر و هماهنگی خودکار با تنظیمات سیستم‌عامل.
-- **پشتیبان‌گیری و بازیابی JSON**:
-  - خروجی گرفتن از کل تکالیف، درس‌ها و تم در قالب فایل `.json` تاریخ‌دار (در نسخه دسکتاپ/اندروید Tauri مستقیماً توسط دستور بومی Rust در پوشه Downloads ذخیره می‌شود).
+- **چاپ و خروجی مستقیم PDF (برگه A4)**: پیش‌نمایش صفحه چاپ A4 با چیدمان راست‌به‌چپ (`@media print`)، گزینه‌های نمایش/مخفی‌سازی تکالیف انجام‌شده و یادداشت‌ها و تولید مستقیم فایل چندصفحه‌ای PDF با `jsPDF`.
+- **حالت تاریک (Dark Mode)**: دکمه تغییر تم در نوار کناری با ذخیره‌سازی انتخاب کاربر و هماهنگی خودکار با تنظیمات سیستم‌عامل.
+- **پشتیبان‌گیری و بازیابی JSON و پوشه اختصاصی خروجی**:
+  - خروجی گرفتن از کل تکالیف، درس‌ها و تم در قالب فایل `.json` تاریخ‌دار و ذخیره مستقیم فایل‌های **PDF** و **JSON** در پوشه اختصاصی **`Download/WeeklyStudyPlanner`** در نسخه اندروید (از طریق پل بومی Kotlin و `MediaStore`) و **`Downloads/WeeklyStudyPlanner`** در نسخه‌های دسکتاپ Tauri.
   - دریافت ورودی JSON از طریق انتخاب فایل یا چسباندن مستقیم متن، اعتبارسنجی لحظه‌ای ساختار و اعمال به دو روش **جایگزینی کامل** یا **ادغام هوشمند**.
 - **قابلیت PWA و کارکرد آفلاین**: قابل نصب روی موبایل و دسکتاپ از طریق مرورگر، همراه با کش آفلاین Service Worker و نوار اطلاع‌رسانی حالت آفلاین.
 
@@ -147,7 +149,7 @@ npx tauri dev
 
 #### ۴. اجرای تست‌ها و بررسی تایپ‌ها
 ```bash
-# تست‌های واحد فرانت‌اند (۲۲ تست)
+# تست‌های واحد فرانت‌اند (۳۰ تست)
 npx tsx --test src/utils/*.test.ts
 
 # بررسی تایپ‌های TypeScript
@@ -216,17 +218,19 @@ git push origin v1.0.0
 
 ### ✨ Key Features
 
+- **Modern Split-Pane Reminders UI**: Collapsible sidebar (`PlannerSidebar`) featuring 2×2 color-coded quick-filter tiles (**Today**, **Completed**, **High Priority**, **All Week**), live subject lists, **Recently Deleted** trash view, priority tag pills, a 3-column weekly board grid, and a floating `+` action button.
 - **Weekly Schedule (Saturday to Friday)**: Structured 7-day layout with quick week navigation (`Previous`, `Current`, `Next`) and automatic highlighting for today's date.
 - **Dual Jalali & Gregorian Calendar**: Accurate, simultaneous Persian (Jalali) and Gregorian dates across week headers, day sections, and charts—implemented in both TypeScript (`src/utils/jalali.ts`) and Rust (`src-tauri/src/jalali.rs`) with leap-year handling.
-- **Task Management & Inline Quick-Add**: Create, edit, and delete study tasks with optional notes, subject tag, 3 priority tiers (`high`, `medium`, `low`), completion toggles, and fast inline task creation per day.
+- **Task Management, Inline Quick-Add & All-Week Repeat**: Create, edit, and delete study tasks with optional notes, subject tag, 3 priority tiers (`high`, `medium`, `low`), completion toggles, inline per-day creation, and a **register for all days of the week (Saturday–Friday)** checkbox in both `TaskModal` and inline quick-add.
+- **Recently Deleted (Trash) & Safe Bulk Delete**: Deleted tasks move to **Recently Deleted** for one-click restore or permanent removal, plus a **Delete All Tasks** action (`ConfirmDeleteAllModal`) supporting all-tasks or current-week scope and reversible soft-delete or permanent delete.
 - **Custom Subject Categories**: Full CRUD management for academic subjects with custom color swatches (`SubjectModal`).
 - **Smart Study Reminders**: Per-task `HH:mm` reminders, an active due-reminders banner (`ReminderBanner`), Web Audio API chime (`sound.ts`), 10-minute snooze, dismiss/complete quick actions, and browser `Notification` API support.
-- **Live Filtering & Search**: Instant filtering across search text (title & notes), subject category, priority level, and completion status.
+- **Live Filtering & Search**: Instant filtering across search text (title & notes), quick-filter tiles, subject lists, active reminders, and priority tags.
 - **Weekly Progress Analytics Chart**: Interactive **Recharts** bar chart comparing completed vs. remaining tasks per day alongside weekly completion percentage and dual-date tooltips.
-- **A4 Print & PDF Export**: Dedicated `@media print` A4 sheet preview (`PrintScheduleModal` + `PrintableWeekSheet`) with toggles for completed tasks and notes, ready to save as PDF.
-- **Dark Mode**: Header theme toggle saved to `localStorage` (`study_planner_theme_v1`), respecting system `prefers-color-scheme` with flash-free startup.
-- **JSON Backup & Restore**:
-  - Export all tasks, subjects, and theme preference into a dated `.json` file (automatically saved to Downloads natively via Rust `save_json_backup` when running in Tauri, or downloaded via browser Blob).
+- **Direct A4 PDF Export & Print Preview**: Dedicated `@media print` A4 sheet preview (`PrintScheduleModal` + `PrintableWeekSheet`) with toggles for completed tasks and notes, plus direct multi-page RTL PDF generation via `jsPDF` (`pdfExport.ts`).
+- **Dark Mode**: Sidebar theme toggle saved to `localStorage` (`study_planner_theme_v1`), respecting system `prefers-color-scheme` with flash-free startup.
+- **JSON Backup, Restore & Dedicated Export Folder**:
+  - Export all tasks, subjects, and theme preference into a dated `.json` file—both **PDF** and **JSON** exports are saved natively into **`Download/WeeklyStudyPlanner`** on Android (via Kotlin `MediaStore.Downloads` bridge) and **`Downloads/WeeklyStudyPlanner`** on Tauri desktop, or downloaded via browser Blob on the web.
   - Restore from `.json` file upload or pasted JSON text with live validation and **Replace** or **Merge** import modes.
 - **PWA & Offline Support**: Installable web app with Workbox asset caching, an in-app install prompt (`PWAInstallButton` supporting Chromium `beforeinstallprompt` & iOS Safari instructions), and an `OfflineIndicator` banner.
 
@@ -281,8 +285,8 @@ Download both the installer and its matching `.sha256` file from Releases, then 
 
 ### 🏗️ Architecture & Tech Stack
 
-- **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, Recharts, Lucide React, `vite-plugin-pwa`
-- **Native Core (Desktop & Android)**: Rust (Edition 2021) + Tauri v2 (`src-tauri/`)
+- **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, Recharts, Lucide React, `jsPDF`, `vite-plugin-pwa`
+- **Native Core (Desktop & Android)**: Rust (Edition 2021) + Tauri v2 (`src-tauri/`) + Android Kotlin `MediaStore.Downloads` bridge
 - **CI/CD**: Multi-platform GitHub Actions workflow (`.github/workflows/release.yml`)
 
 ```text
@@ -294,17 +298,18 @@ Study-App-Manager/
 │   └── PKGBUILD               # Arch Linux build recipe for Rust/Tauri binary
 ├── public/                    # PWA SVG/PNG/Maskable & Apple touch icons
 ├── src/
-│   ├── components/            # Modals, Day cards, Recharts chart, PDF sheet, PWA UI
+│   ├── components/            # PlannerSidebar, Day cards, Modals, Recharts chart, PDF sheet, PWA UI
 │   ├── hooks/                 # usePWAInstall, useOnlineStatus
 │   ├── types/                 # TypeScript interfaces (StudyTask, SubjectCategory)
-│   ├── utils/                 # Jalali math, filters, JSON backup/import, Tauri bridge & unit tests
-│   ├── App.tsx                # Main application state & weekly planner view
+│   ├── utils/                 # Jalali math, tasks/trash, PDF/JSON export, Tauri bridge & 30 unit tests
+│   ├── App.tsx                # Main application state & split-pane weekly planner view
 │   └── main.tsx               # App bootstrap & Service Worker registration
 └── src-tauri/
+    ├── android-templates/     # Native Android Kotlin bridge (Download/WeeklyStudyPlanner)
     ├── capabilities/          # Tauri v2 permission capabilities
     ├── src/
     │   ├── jalali.rs          # Rust Jalali/Gregorian converter + unit tests
-    │   ├── lib.rs             # Tauri commands & desktop/mobile entrypoint
+    │   ├── lib.rs             # Tauri commands (JSON/PDF export) & desktop/mobile entrypoint
     │   └── main.rs            # Desktop binary entrypoint
     ├── Cargo.toml
     └── tauri.conf.json
@@ -341,7 +346,7 @@ npx tauri dev
 
 #### 4. Tests & Type Checking
 ```bash
-# Run all 22 TypeScript utility unit tests
+# Run all 30 TypeScript utility unit tests
 npx tsx --test src/utils/*.test.ts
 
 # Run TypeScript type check
