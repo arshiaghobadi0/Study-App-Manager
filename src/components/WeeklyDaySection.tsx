@@ -14,6 +14,7 @@ interface WeeklyDaySectionProps {
   onQuickAdd: (payload: {
     title: string;
     dateISO: string;
+    repeatAllWeek?: boolean;
     subjectId: string;
     priority: PriorityLevel;
     reminderEnabled: boolean;
@@ -46,6 +47,7 @@ export function WeeklyDaySection({
   const [priority, setPriority] = useState<PriorityLevel>('medium');
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState('18:00');
+  const [repeatAllWeek, setRepeatAllWeek] = useState(false);
   const [error, setError] = useState('');
 
   const completedCount = tasks.filter((t) => t.completed).length;
@@ -60,12 +62,14 @@ export function WeeklyDaySection({
     onQuickAdd({
       title: trimmed,
       dateISO: day.dateISO,
+      repeatAllWeek,
       subjectId: subjectsById[subjectId] ? subjectId : subjects[0]?.id ?? 'math',
       priority,
       reminderEnabled,
       reminderTime,
     });
     setTitle('');
+    setRepeatAllWeek(false);
     setError('');
     setOptionsOpen(false);
   };
@@ -205,8 +209,17 @@ export function WeeklyDaySection({
                 </select>
               </div>
 
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <label className="inline-flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={repeatAllWeek}
+                      onChange={(e) => setRepeatAllWeek(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-600 text-rose-600 focus:ring-rose-500"
+                    />
+                    تمام روزهای هفته
+                  </label>
                   <label className="inline-flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer whitespace-nowrap">
                     <input
                       type="checkbox"
@@ -243,7 +256,7 @@ export function WeeklyDaySection({
                     type="submit"
                     className="px-2.5 py-1 text-[11px] font-semibold bg-rose-600 text-white hover:bg-rose-700 rounded-md"
                   >
-                    افزودن
+                    {repeatAllWeek ? 'افزودن به کل هفته' : 'افزودن'}
                   </button>
                 </div>
               </div>

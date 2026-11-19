@@ -54,6 +54,7 @@ import {
   computeSidebarCounts,
   computeSnoozeUntilISO,
   computeWeeklyStats,
+  expandTaskDatesForWeek,
   filterTasks,
   getDueReminderTasks,
   sortTasksForDay,
@@ -376,6 +377,7 @@ export default function App() {
     title: string;
     notes: string;
     dateISO: string;
+    repeatAllWeek?: boolean;
     subjectId: string;
     priority: PriorityLevel;
     reminderEnabled: boolean;
@@ -401,42 +403,57 @@ export default function App() {
         ),
       );
     } else {
-      const created: StudyTask = {
+      const targetDates = expandTaskDatesForWeek(payload.dateISO, Boolean(payload.repeatAllWeek));
+      const nowISO = new Date().toISOString();
+      const createdList: StudyTask[] = targetDates.map((iso) => ({
         id: generateId('task'),
         title: payload.title,
         notes: payload.notes || undefined,
-        dateISO: payload.dateISO,
+        dateISO: iso,
         subjectId: payload.subjectId,
         priority: payload.priority,
         completed: false,
         reminderEnabled: payload.reminderEnabled,
         reminderTime: payload.reminderTime,
-        createdAt: new Date().toISOString(),
-      };
-      setTasks((prev) => [...prev, created]);
+        createdAt: nowISO,
+      }));
+      setTasks((prev) => [...prev, ...createdList]);
+      if (createdList.length > 1) {
+        showTimedFeedback(
+          `تکلیف «${payload.title}» برای تمام ۷ روز هفته (شنبه تا جمعه) ثبت شد.`,
+        );
+      }
     }
   };
 
   const handleQuickAdd = (payload: {
     title: string;
     dateISO: string;
+    repeatAllWeek?: boolean;
     subjectId: string;
     priority: PriorityLevel;
     reminderEnabled: boolean;
     reminderTime: string;
   }) => {
-    const created: StudyTask = {
+    const targetDates = expandTaskDatesForWeek(payload.dateISO, Boolean(payload.repeatAllWeek));
+    const nowISO = new Date().toISOString();
+    const createdList: StudyTask[] = targetDates.map((iso) => ({
       id: generateId('task'),
       title: payload.title,
-      dateISO: payload.dateISO,
+      dateISO: iso,
       subjectId: payload.subjectId,
       priority: payload.priority,
       completed: false,
       reminderEnabled: payload.reminderEnabled,
       reminderTime: payload.reminderTime,
-      createdAt: new Date().toISOString(),
-    };
-    setTasks((prev) => [...prev, created]);
+      createdAt: nowISO,
+    }));
+    setTasks((prev) => [...prev, ...createdList]);
+    if (createdList.length > 1) {
+      showTimedFeedback(
+        `تکلیف «${payload.title}» برای تمام ۷ روز هفته (شنبه تا جمعه) ثبت شد.`,
+      );
+    }
   };
 
   const handleToggleComplete = (taskId: string) => {

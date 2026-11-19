@@ -203,6 +203,17 @@ export function computeSnoozeUntilISO(minutes: number, nowMs: number = Date.now(
   return new Date(nowMs + minutes * 60 * 1000).toISOString();
 }
 
+export function expandTaskDatesForWeek(
+  anchorDateISO: string,
+  repeatAllWeek: boolean,
+): string[] {
+  if (!repeatAllWeek) {
+    return [anchorDateISO];
+  }
+  const saturdayISO = getSaturdayOfWeekISO(anchorDateISO);
+  return Array.from({ length: 7 }, (_, index) => addDaysISO(saturdayISO, index));
+}
+
 export function createInitialSeedTasks(anchorISO: string = getTodayISO()): StudyTask[] {
   const sat = getSaturdayOfWeekISO(anchorISO);
   const nowISO = new Date().toISOString();

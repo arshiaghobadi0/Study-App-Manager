@@ -6,6 +6,7 @@ import {
   computeSnoozeUntilISO,
   computeWeeklyStats,
   createInitialSeedTasks,
+  expandTaskDatesForWeek,
   filterTasks,
   getDueReminderTasks,
   sortTasksForDay,
@@ -137,4 +138,21 @@ test('createInitialSeedTasks populates tasks within the anchor week', () => {
   for (const item of seed) {
     assert.ok(days.has(item.dateISO));
   }
+});
+
+test('expandTaskDatesForWeek returns single date or all 7 days of the Iranian week', () => {
+  assert.deepEqual(expandTaskDatesForWeek('2026-11-19', false), ['2026-11-19']);
+
+  const expectedWeek = [
+    '2026-11-14', // Saturday
+    '2026-11-15',
+    '2026-11-16',
+    '2026-11-17',
+    '2026-11-18',
+    '2026-11-19', // Thursday
+    '2026-11-20', // Friday
+  ];
+  assert.deepEqual(expandTaskDatesForWeek('2026-11-19', true), expectedWeek);
+  assert.deepEqual(expandTaskDatesForWeek('2026-11-14', true), expectedWeek);
+  assert.deepEqual(expandTaskDatesForWeek('2026-11-20', true), expectedWeek);
 });

@@ -4,7 +4,9 @@ import type { PriorityLevel, StudyTask, SubjectCategory } from '../types/study';
 import {
   formatGregorianEnShort,
   formatJalaliLong,
+  formatWeekSpanSummary,
   getPersianWeekdayIndex,
+  getWeekDays,
   isoToJalali,
   jalaliMonthLength,
   jalaliToISO,
@@ -25,6 +27,7 @@ interface TaskModalProps {
     title: string;
     notes: string;
     dateISO: string;
+    repeatAllWeek?: boolean;
     subjectId: string;
     priority: PriorityLevel;
     reminderEnabled: boolean;
@@ -47,6 +50,7 @@ export function TaskModal({
   const [priority, setPriority] = useState<PriorityLevel>('medium');
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [reminderTime, setReminderTime] = useState('18:00');
+  const [repeatAllWeek, setRepeatAllWeek] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -59,6 +63,7 @@ export function TaskModal({
       setPriority(editingTask.priority);
       setReminderEnabled(editingTask.reminderEnabled);
       setReminderTime(editingTask.reminderTime || '18:00');
+      setRepeatAllWeek(false);
     } else {
       setTitle('');
       setNotes('');
@@ -67,6 +72,7 @@ export function TaskModal({
       setPriority('medium');
       setReminderEnabled(true);
       setReminderTime('18:00');
+      setRepeatAllWeek(false);
     }
     setError('');
   }, [isOpen, editingTask, initialDateISO, subjects]);
@@ -76,6 +82,7 @@ export function TaskModal({
   const jalali = isoToJalali(dateISO);
   const gregorian = parseDateISO(dateISO);
   const weekdayName = PERSIAN_WEEKDAYS[getPersianWeekdayIndex(dateISO)];
+  const selectedWeekSpan = formatWeekSpanSummary(getWeekDays(0, dateISO));
   const maxJalaliDay = jalaliMonthLength(jalali.jy, jalali.jm);
   const jalaliYears = [jalali.jy - 1, jalali.jy, jalali.jy + 1, jalali.jy + 2].filter(
     (y, idx, arr) => arr.indexOf(y) === idx && y >= 1400 && y <= 1420,
@@ -99,6 +106,7 @@ export function TaskModal({
       title: trimmed,
       notes: notes.trim(),
       dateISO,
+      repeatAllWeek: !editingTask && repeatAllWeek,
       subjectId,
       priority,
       reminderEnabled,
@@ -195,13 +203,15 @@ export function TaskModal({
           </div>
 
           <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-3.5 space-y-3 bg-[#F4F4F6]/70 dark:bg-zinc-800/40">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 <Calendar className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" aria-hidden="true" />
                 <span>تنظیم همزمان تاریخ شمسی و میلادی</span>
               </div>
               <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
-                {weekdayName} · {formatJalaliLong(jalali)} / {formatGregorianEnShort(gregorian)}
+                {!editingTask && repeatAllWeek
+                  ? `کل هفته: ${selectedWeekSpan.jalaliSpan}`
+                  : `${weekdayName} · ${formatJalaliLong(jalali)} / ${formatGregorianEnShort(gregorian)}`}
               </span>
             </div>
 
@@ -266,6 +276,26 @@ export function TaskModal({
                 />
               </div>
             </div>
+
+            {!editingTask && (
+              <div className="pt-2.5 border-t border-zinc-200/80 dark:border-zinc-700/80">
+                <label className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-zinc-800 dark:text-zinc-200 cursor-pointer">
+                  <input
+                    id="task-repeat-all-week"
+                    type="checkbox"
+                    checked={repeatAllWeek}
+                    onChange={(e) => setRepeatAllWeek(e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600 dark:bg-zinc-800 text-rose-600 focus:ring-rose-500"
+                  />
+                  ثبت برای تمام روزهای هفته (شنبه تا جمعه)
+                </label>
+                {repeatAllWeek && (
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 pr-6">
+                    این تکلیف برای هر ۷ روز هفته انتخاب‌شده ({selectedWeekSpan.jalaliSpan}) به‌صورت جداگانه ثبت می‌شود.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
@@ -321,7 +351,11 @@ export function TaskModal({
               type="submit"
               className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 transition-colors"
             >
-              {editingTask ? 'ذخیره تغییرات' : 'ثبت تکلیف'}
+              {editingTask
+                ? 'ذخیره تغییرات'
+                : repeatAllWeek
+                  ? 'ثبت برای کل هفته (۷ روز)'
+                  : 'ثبت تکلیف'}
             </button>
           </div>
         </form>
