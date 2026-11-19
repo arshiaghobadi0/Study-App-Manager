@@ -46,6 +46,7 @@ import {
   parseDateISO,
   toPersianDigits,
 } from './utils/jalali';
+import { exportSchedulePdfFile } from './utils/pdfExport';
 import { buildPrintableWeekData, type PrintScheduleOptions } from './utils/printSchedule';
 import { playReminderChime } from './utils/sound';
 import { loadSubjects, loadTasks, loadTrash, saveSubjects, saveTasks, saveTrash } from './utils/storage';
@@ -277,7 +278,20 @@ export default function App() {
     window.print();
   };
 
-  const handleExportBackup = () => {
+  const handleSavePdf = async () => {
+    const weekStartISO = weekDays[0]?.dateISO ?? todayISO;
+    const result = await exportSchedulePdfFile(printableData, weekStartISO);
+    if (result.destination === 'android-downloads') {
+      showTimedFeedback(`فایل PDF در پوشه ${result.folder} ذخیره شد (${result.path}).`);
+    } else if (result.destination === 'tauri-downloads') {
+      showTimedFeedback(`فایل PDF در مسیر ${result.path} ذخیره شد.`);
+    } else {
+      showTimedFeedback(`فایل PDF (${result.path}) با موفقیت دانلود شد.`);
+    }
+    return result;
+  };
+
+  const handleExportBackup = async () => {
     const payload = createBackupPayload({
       tasks,
       subjects,
@@ -285,11 +299,21 @@ export default function App() {
     });
     const jsonContent = serializeBackupJson(payload);
     const filename = buildBackupFilename(todayISO);
-    downloadJsonFile(filename, jsonContent);
+    const result = await downloadJsonFile(filename, jsonContent);
 
-    showTimedFeedback(
-      `فایل پشتیبان (${toPersianDigits(payload.summary.taskCount)} تکلیف و ${toPersianDigits(payload.summary.subjectCount)} درس) دانلود شد.`,
-    );
+    if (result.destination === 'android-downloads') {
+      showTimedFeedback(
+        `فایل پشتیبان JSON در پوشه ${result.folder} ذخیره شد (${toPersianDigits(payload.summary.taskCount)} تکلیف و ${toPersianDigits(payload.summary.subjectCount)} درس).`,
+      );
+    } else if (result.destination === 'tauri-downloads') {
+      showTimedFeedback(
+        `فایل پشتیبان JSON در مسیر ${result.path} ذخیره شد (${toPersianDigits(payload.summary.taskCount)} تکلیف).`,
+      );
+    } else {
+      showTimedFeedback(
+        `فایل پشتیبان (${toPersianDigits(payload.summary.taskCount)} تکلیف و ${toPersianDigits(payload.summary.subjectCount)} درس) دانلود شد.`,
+      );
+    }
   };
 
   const handleApplyImport = ({
@@ -1025,6 +1049,7 @@ export default function App() {
           onChangeOptions={setPrintOptions}
           onClose={() => setPrintModalOpen(false)}
           onTriggerPrint={handleTriggerPrint}
+          onSavePdf={handleSavePdf}
         />
 
         <ImportBackupModal

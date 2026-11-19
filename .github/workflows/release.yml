@@ -287,6 +287,18 @@ jobs:
           npx tauri android init --force
           npx tauri icon public/pwa-512x512.png
 
+      - name: Configure Android dedicated Downloads/WeeklyStudyPlanner export bridge
+        run: |
+          ANDROID_PKG_DIR="src-tauri/gen/android/app/src/main/java/com/studyplanner/weekly"
+          mkdir -p "$ANDROID_PKG_DIR"
+          cp src-tauri/android-templates/MainActivity.kt "$ANDROID_PKG_DIR/MainActivity.kt"
+          cp src-tauri/android-templates/AndroidDownloadsBridge.kt "$ANDROID_PKG_DIR/AndroidDownloadsBridge.kt"
+          MANIFEST="src-tauri/gen/android/app/src/main/AndroidManifest.xml"
+          if ! grep -q "WRITE_EXTERNAL_STORAGE" "$MANIFEST"; then
+            sed -i 's|<application|    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />\n    <application|' "$MANIFEST"
+          fi
+          ls -lh "$ANDROID_PKG_DIR"
+
       - name: Build Android APK (arm64 + armv7)
         run: npx tauri android build --apk --debug --target aarch64 --target armv7
 

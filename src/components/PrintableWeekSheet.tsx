@@ -12,8 +12,7 @@ export function PrintableWeekSheet({ data }: PrintableWeekSheetProps) {
       <div className="border-b-2 border-[#201d1d] pb-3 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[11px] text-[#6e6e73] font-bold">
-            <span dir="ltr" className="ml-1">[+]</span>
-            opencode // برنامه مطالعه هفتگی
+            برنامه‌ریز درسی هفتگی — Weekly Study Planner
           </p>
           <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 mt-0.5">
             <h2 className="text-[18px] font-bold text-[#201d1d] tabular-nums">{data.jalaliSpan}</h2>

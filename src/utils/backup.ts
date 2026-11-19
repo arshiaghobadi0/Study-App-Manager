@@ -1,7 +1,7 @@
 import type { PriorityLevel, StudyTask, SubjectCategory } from '../types/study';
 import { SUBJECT_COLOR_SWATCHES } from './tasks';
 import type { ThemeMode } from './theme';
-import { invokeTauriCommand, isTauriRuntime } from './tauriBridge';
+import { saveExportFile, type ExportSaveResult } from './tauriBridge';
 
 export interface StudyBackupPayload {
   schemaVersion: 1;
@@ -390,15 +390,14 @@ function triggerBrowserJsonDownload(filename: string, jsonContent: string): void
   }, 1000);
 }
 
-export function downloadJsonFile(filename: string, jsonContent: string): void {
-  if (isTauriRuntime()) {
-    void invokeTauriCommand<string>('save_json_backup', {
-      filename,
-      content: jsonContent,
-    }).catch(() => {
-      triggerBrowserJsonDownload(filename, jsonContent);
-    });
-    return;
-  }
-  triggerBrowserJsonDownload(filename, jsonContent);
+export async function downloadJsonFile(
+  filename: string,
+  jsonContent: string,
+): Promise<ExportSaveResult> {
+  return saveExportFile({
+    filename,
+    mimeType: 'application/json',
+    data: jsonContent,
+    fallbackBrowserDownload: () => triggerBrowserJsonDownload(filename, jsonContent),
+  });
 }
