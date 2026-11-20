@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">برنامه‌ریز درسی</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_planner">برنامه</string>
+    <string name="nav_analytics">آمار</string>
+    <string name="nav_subjects">دروس</string>
+    <string name="nav_tools">ابزارها</string>
+
+    <!-- Planner Screen -->
+    <string name="planner_title">برنامه درسی هفتگی</string>
+    <string name="btn_prev_week">هفته قبل</string>
+    <string name="btn_current_week">هفته جاری</string>
+    <string name="btn_next_week">هفته بعد</string>
+    <string name="search_hint">جستجو در عنوان یا یادداشت تکالیف…</string>
+    <string name="all_week_chip">همه هفته</string>
+    <string name="today_badge">امروز</string>
+    <string name="filter_all">همه</string>
+    <string name="filter_pending">باقی‌مانده</string>
+    <string name="filter_completed">تکمیل‌شده</string>
+    <string name="filter_high">اولویت بالا</string>
+    <string name="fab_add_task">افزودن تکلیف</string>
+    <string name="empty_tasks_title">تکلیفی برای این فیلتر یافت نشد</string>
+    <string name="empty_tasks_subtitle">با دکمه «افزودن تکلیف» یک مورد جدید برای امروز یا کل هفته ثبت کنید.</string>
+    <string name="menu_delete_all">حذف همه تکالیف</string>
+    <string name="menu_trash">اخیراً حذف‌شده</string>
+
+    <!-- Task Editor Bottom Sheet -->
+    <string name="task_editor_new_title">افزودن تکلیف جدید</string>
+    <string name="task_editor_edit_title">ویرایش تکلیف</string>
+    <string name="field_task_title">عنوان تکلیف</string>
+    <string name="field_task_notes">یادداشت یا شماره صفحات (اختیاری)</string>
+    <string name="field_subject">درس</string>
+    <string name="field_priority">اولویت تکلیف</string>
+    <string name="priority_high">بالا</string>
+    <string name="priority_medium">متوسط</string>
+    <string name="priority_low">عادی</string>
+    <string name="field_dual_date">تاریخ دوگانه (شمسی و میلادی)</string>
+    <string name="btn_pick_gregorian">انتخاب از تقویم میلادی</string>
+    <string name="checkbox_all_week">ثبت برای تمام روزهای هفته (شنبه تا جمعه)</string>
+    <string name="checkbox_all_week_hint">تکلیف برای هر ۷ روز هفته انتخاب‌شده به‌صورت جداگانه ثبت می‌شود.</string>
+    <string name="switch_reminder">یادآور اعلان اندروید</string>
+    <string name="btn_pick_time">تغییر ساعت</string>
+    <string name="btn_save_task">ثبت تکلیف</string>
+    <string name="btn_save_all_week">ثبت برای کل هفته (۷ روز)</string>
+    <string name="btn_save_changes">ذخیره تغییرات</string>
+    <string name="btn_cancel">انصراف</string>
+    <string name="error_title_required">وارد کردن عنوان تکلیف الزامی است.</string>
+
+    <!-- Analytics Screen -->
+    <string name="analytics_title">آمار پیشرفت هفتگی</string>
+    <string name="analytics_weekly_rate">نرخ تکمیل هفته</string>
+    <string name="analytics_daily_chart">مقایسه روزانه (شنبه تا جمعه)</string>
+    <string name="analytics_by_subject">پیشرفت به تفکیک درس</string>
+    <string name="analytics_legend_completed">تکمیل‌شده</string>
+    <string name="analytics_legend_pending">باقی‌مانده</string>
+    <string name="analytics_no_data">هنوز تکلیفی در این هفته ثبت نشده است.</string>
+
+    <!-- Subjects Screen -->
+    <string name="subjects_title">مدیریت درس‌ها</string>
+    <string name="subjects_add">افزودن درس جدید</string>
+    <string name="subject_editor_add_title">افزودن درس</string>
+    <string name="subject_editor_edit_title">ویرایش درس</string>
+    <string name="field_subject_name">نام درس</string>
+    <string name="field_subject_color">رنگ اختصاصی درس</string>
+    <string name="error_subject_name">نام درس نمی‌تواند خالی باشد.</string>
+    <string name="error_last_subject">حداقل یک درس باید در برنامه باقی بماند.</string>
+
+    <!-- Tools Screen -->
+    <string name="tools_title">ابزارها و تنظیمات</string>
+    <string name="tools_section_exports">خروجی و پشتیبان‌گیری (پوشه اختصاصی)</string>
+    <string name="tools_folder_note">فایل‌های PDF و JSON مستقیماً در پوشه Download/WeeklyStudyPlanner ذخیره می‌شوند.</string>
+    <string name="tools_export_pdf">خروجی PDF برنامه هفته</string>
+    <string name="tools_export_pdf_sub">تولید برگه A4 فارسی و ذخیره مستقیم در Download/WeeklyStudyPlanner</string>
+    <string name="tools_export_json">پشتیبان‌گیری JSON</string>
+    <string name="tools_export_json_sub">سازگار کامل با نسخه وب و دسکتاپ (schemaVersion 1)</string>
+    <string name="tools_import_json">بازیابی پشتیبان JSON</string>
+    <string name="tools_import_json_sub">ورود از فایل یا متن JSON با حالت جایگزینی یا ادغام</string>
+    <string name="tools_section_cleanup">مدیریت تکالیف و بازیابی</string>
+    <string name="tools_trash_title">اخیراً حذف‌شده</string>
+    <string name="tools_trash_sub">مشاهده، بازیابی یا حذف دائمی تکالیف پاک‌شده</string>
+    <string name="tools_delete_all_title">حذف همه تکالیف</string>
+    <string name="tools_delete_all_sub">پاک‌سازی امن همه تکالیف یا فقط هفته جاری</string>
+    <string name="tools_section_appearance">ظاهر برنامه</string>
+    <string name="theme_system">هماهنگ با سیستم</string>
+    <string name="theme_light">روشن</string>
+    <string name="theme_dark">تاریک</string>
+
+    <!-- Trash & Delete All -->
+    <string name="trash_empty_state">بخش «اخیراً حذف‌شده» خالی است.</string>
+    <string name="btn_restore">بازیابی</string>
+    <string name="btn_restore_all">بازیابی همه</string>
+    <string name="btn_empty_trash">خالی کردن سطل</string>
+    <string name="delete_all_confirm_title">حذف همه تکالیف</string>
+    <string name="delete_all_scope_all">حذف همه تکالیف ثبت‌شده</string>
+    <string name="delete_all_scope_week">فقط تکالیف هفته جاری</string>
+    <string name="delete_all_permanent">حذف دائمی (بدون انتقال به «اخیراً حذف‌شده»)</string>
+    <string name="delete_all_confirm_btn">تأیید و حذف</string>
+
+    <!-- Import JSON -->
+    <string name="import_title">ورودی پشتیبان JSON</string>
+    <string name="btn_pick_json_file">انتخاب فایل .json از حافظه</string>
+    <string name="import_paste_hint">یا متن فایل JSON پشتیبان را اینجا جای‌گذاری کنید…</string>
+    <string name="import_mode_merge">ادغام هوشمند با داده‌های فعلی</string>
+    <string name="import_mode_replace">جایگزینی کامل با داده‌های فعلی</string>
+    <string name="btn_apply_import">اعمال پشتیبان</string>
+
+    <!-- Notifications & Actions -->
+    <string name="reminder_channel_name">یادآور تکالیف درسی</string>
+    <string name="reminder_channel_desc">اعلان‌های زمان مطالعه تکالیف هفتگی</string>
+    <string name="action_undo">بازگردانی</string>
+    <string name="cd_edit">ویرایش</string>
+    <string name="cd_delete">حذف</string>
+    <string name="cd_toggle_reminder">تغییر وضعیت یادآور</string>
+</resources>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layoutDirection="rtl"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/tvDeleteAllSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp" />
+
+    <RadioGroup
+        android:id="@+id/rgDeleteScope"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp">
+
+        <RadioButton
+            android:id="@+id/rbScopeAll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/delete_all_scope_all" />
+
+        <RadioButton
+            android:id="@+id/rbScopeWeek"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/delete_all_scope_week" />
+    </RadioGroup>
+
+    <com.google.android.material.checkbox.MaterialCheckBox
+        android:id="@+id/cbDeletePermanent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/delete_all_permanent"
+        android:textColor="@color/danger_text"
+        android:textSize="13sp" />
+</LinearLayout>

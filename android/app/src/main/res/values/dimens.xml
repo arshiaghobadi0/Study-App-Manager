@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="screen_padding">16dp</dimen>
+    <dimen name="card_radius">18dp</dimen>
+    <dimen name="chip_radius">14dp</dimen>
+    <dimen name="spacing_xs">6dp</dimen>
+    <dimen name="spacing_sm">10dp</dimen>
+    <dimen name="spacing_md">16dp</dimen>
+    <dimen name="spacing_lg">24dp</dimen>
+</resources>

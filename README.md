@@ -21,6 +21,7 @@
 [![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Rust](https://img.shields.io/badge/Rust-Tauri_v2-dea584?style=flat-square&logo=rust&logoColor=black)](https://v2.tauri.app/)
+[![Kotlin](https://img.shields.io/badge/Android-Kotlin_%2B_XML-7f52ff?style=flat-square&logo=kotlin&logoColor=white)](android/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![jsPDF](https://img.shields.io/badge/PDF-jsPDF_A4_RTL-e11d48?style=flat-square)](#)
 [![PWA](https://img.shields.io/badge/PWA-Offline_Ready-5a0fc8?style=flat-square&logo=pwa&logoColor=white)](#)
@@ -54,7 +55,8 @@
 - **ثبت تکلیف برای تمام روزهای هفته (شنبه تا جمعه)**: افزودن تیک **«ثبت برای تمام روزهای هفته (شنبه تا جمعه)»** در هر دو بخش **پنجره افزودن تکلیف** و **افزودن سریع درون‌خطی** برای ثبت هم‌زمان یک تکلیف تکراری در هر ۷ روز هفته انتخاب‌شده.
 - **دکمه «حذف همه تکالیف» با پنجره تأیید امن**: پاک‌سازی یکجای تکالیف با انتخاب دامنه (همه تکالیف یا فقط هفته جاری) و گزینه **حذف دائمی**؛ به‌صورت پیش‌فرض تکالیف به بخش **«اخیراً حذف‌شده»** منتقل می‌شوند تا در صورت نیاز قابل بازیابی باشند.
 - **بخش «اخیراً حذف‌شده» (سطل بازیافت)**: نگهداری تکالیف حذف‌شده همراه با امکان بازیابی تکی، حذف دائمی یا خالی‌کردن کامل سطل بازیافت.
-- **خروجی مستقیم PDF و پوشه اختصاصی اندروید/دسکتاپ**: تولید مستقیم فایل PDF چندصفحه‌ای A4 با چیدمان راست‌به‌چپ فارسی (`jsPDF`)؛ در نسخه اندروید فایل‌های **PDF** و **JSON** از طریق پل بومی Kotlin (`MediaStore.Downloads`) مستقیماً در پوشه اختصاصی **`Download/WeeklyStudyPlanner`** (و در دسکتاپ در **`Downloads/WeeklyStudyPlanner`**) ذخیره می‌شوند.
+- **نسخه کاملاً بومی و مستقل اندروید با Kotlin + XML (Material 3)**: طراحی اختصاصی و متفاوت از نسخه‌های دسکتاپ/وب با تم سبز فیروزه‌ای و کهربایی، ناوبری ۴ تب در پایین صفحه (**برنامه**، **آمار**، **دروس**، **ابزارها**)، نوار افقی ۷ روز هفته، نمودارهای بومی Canvas، اعلان زمان‌بندی‌شده `AlarmManager` و تولید PDF بومی با `PdfDocument` در پوشه `Download/WeeklyStudyPlanner` (با سازگاری ۱۰۰٪ با فایل پشتیبان JSON نسخه‌های وب و دسکتاپ).
+- **خروجی مستقیم PDF و پوشه اختصاصی اندروید/دسکتاپ**: تولید مستقیم فایل PDF چندصفحه‌ای A4 با چیدمان راست‌به‌چپ فارسی؛ در نسخه اندروید فایل‌های **PDF** و **JSON** از طریق `MediaStore.Downloads` مستقیماً در پوشه اختصاصی **`Download/WeeklyStudyPlanner`** (و در دسکتاپ در **`Downloads/WeeklyStudyPlanner`**) ذخیره می‌شوند.
 
 <a id="features-fa"></a>
 
@@ -113,7 +115,7 @@
 | **Linux (Debian / Ubuntu)** | بسته نصبی (`.deb`) | `amd64` / `x64` | Release | `*.deb.sha256` | [دانلود از Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 | **Linux (Arch / Manjaro)** | بسته نصبی (`.pkg.tar.zst`) | `x86_64` | Release | `*.pkg.tar.zst.sha256` | [دانلود از Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 | **Linux (توزیع‌های عمومی)** | اجرای مستقیم (`.AppImage`) | `x86_64` | Release | `*.AppImage.sha256` | [دانلود از Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
-| **Android** | فایل نصبی اندروید (`.apk`) | `arm64 + armv7` | Debug APK\* | `*.apk.sha256` | [دانلود از Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
+| **Android** | فایل نصبی بومی Kotlin + XML (`.apk`) | `Universal` (API 24–35) | Debug APK\* | `*.apk.sha256` | [دانلود از Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 
 > \* **نکته نسخه اندروید:** فایل APK فعلی به صورت Debug امضاشده با کلید موقت Gradle ساخته می‌شود تا بدون نیاز به تنظیم Keystore قابل نصب مستقیم باشد. پیش از ارتقا به نسخه جدید اندروید، یک پشتیبان JSON بگیرید (در پوشه `Download/WeeklyStudyPlanner` ذخیره می‌شود).
 
@@ -238,7 +240,8 @@ git push origin v1.1.0
 - **All-Week Task Registration (Saturday–Friday)**: Added a **"Register for all days of the week (Saturday–Friday)"** checkbox inside both `TaskModal` and inline per-day quick-add (`WeeklyDaySection`) to schedule repeating tasks across all 7 days in one action.
 - **Safe "Delete All Tasks" Confirmation**: Dedicated bulk-delete button and accessible confirmation modal (`ConfirmDeleteAllModal`) supporting scope selection (all tasks vs. current week) and reversible soft-delete to Recently Deleted (with an optional permanent delete checkbox).
 - **Recently Deleted (Trash & Recovery)**: Deleted tasks move to **Recently Deleted**, where you can restore individual tasks, permanently delete items, or empty the trash.
-- **Direct A4 PDF Export & Dedicated Export Folder**: Direct multi-page RTL A4 PDF export powered by `jsPDF` + Canvas 2D rendering (`pdfExport.ts`). On Android (Tauri v2 + native Kotlin `MediaStore.Downloads` bridge), both **PDF** and **JSON** exports are saved directly into **`Download/WeeklyStudyPlanner`** (and **`Downloads/WeeklyStudyPlanner`** on Tauri desktop).
+- **Standalone Native Android App (Kotlin + XML / Material 3)**: Purpose-built mobile-first Android edition under `android/` with a distinct Persian Teal & Warm Amber palette, 4-tab bottom navigation (**Planner**, **Analytics**, **Subjects**, **Tools**), horizontal 7-day strip, native Canvas completion ring & bar chart, `AlarmManager` notifications, and native `PdfDocument` + `MediaStore.Downloads` exports to `Download/WeeklyStudyPlanner`—100% JSON backup compatible (`schemaVersion: 1`) with Web & Desktop.
+- **Direct A4 PDF Export & Dedicated Export Folder**: Direct multi-page RTL A4 PDF export powered by `jsPDF` on Web/Desktop and native `PdfDocument` on Android, saving both **PDF** and **JSON** exports into **`Download/WeeklyStudyPlanner`** on Android and **`Downloads/WeeklyStudyPlanner`** on Tauri desktop.
 
 <a id="features-en"></a>
 
@@ -297,7 +300,7 @@ Pre-built binaries for all major desktop and mobile platforms are compiled autom
 | **Linux (Debian / Ubuntu)** | Debian Package (`.deb`) | `amd64` / `x64` | Release | `*.deb.sha256` | [Download from Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 | **Linux (Arch / Manjaro)** | Pacman Package (`.pkg.tar.zst`) | `x86_64` | Release | `*.pkg.tar.zst.sha256` | [Download from Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 | **Linux (Universal)** | Portable Binary (`.AppImage`) | `x86_64` | Release | `*.AppImage.sha256` | [Download from Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
-| **Android** | Android Installer (`.apk`) | `arm64 + armv7` | Debug APK\* | `*.apk.sha256` | [Download from Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
+| **Android** | Native Kotlin + XML APK (`.apk`) | `Universal` (API 24–35) | Debug APK\* | `*.apk.sha256` | [Download from Releases](https://github.com/arshiaghobadi0/Study-App-Manager/releases/latest) |
 
 > \* **Android Build Note:** The Android `.apk` is currently built in `--debug` mode so it can be sideloaded directly without configuring a custom signing Keystore. Export a JSON backup (saved to `Download/WeeklyStudyPlanner`) before upgrading Android builds.
 
@@ -319,35 +322,30 @@ Pre-built binaries for all major desktop and mobile platforms are compiled autom
 
 ### 🏗️ Architecture & Tech Stack
 
-- **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, Recharts, Lucide React, `jsPDF`, `vite-plugin-pwa`
-- **Native Core (Desktop & Android)**: Rust (Edition 2021) + Tauri v2 (`src-tauri/`) + Android Kotlin `MediaStore.Downloads` bridge
+- **Web & Desktop Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, Recharts, Lucide React, `jsPDF`, `vite-plugin-pwa`
+- **Desktop Native Core (Windows / macOS / Linux)**: Rust (Edition 2021) + Tauri v2 (`src-tauri/`)
+- **Android Native App**: Standalone **Kotlin + XML Views** (Material 3, ViewBinding, RecyclerView, Custom Canvas Charts, `PdfDocument`, `MediaStore.Downloads`, `AlarmManager`) under `android/`
 - **CI/CD**: Multi-platform GitHub Actions workflow (`.github/workflows/release.yml`)
 
 ```text
 Study-App-Manager/
 ├── .github/workflows/
-│   └── release.yml            # Multi-OS Rust/Tauri CI + SHA256 + GitHub Releases
-├── docs/screenshots/          # Updated UI screenshots (light, dark, modals, PDF, chart, mobile)
+│   └── release.yml            # Multi-OS Rust/Tauri Desktop + Native Kotlin/XML Android CI
+├── android/                   # Standalone Native Kotlin + XML Material 3 Android App
+│   ├── app/src/main/
+│   │   ├── java/com/studyplanner/weekly/
+│   │   │   ├── data/          # Models, SharedPreferences repo, schemaVersion 1 BackupCodec, ViewModel
+│   │   │   ├── reminder/      # AlarmManager scheduler & BroadcastReceiver notifications
+│   │   │   ├── ui/            # 4-tab Fragments, BottomSheets, Adapters & Custom Canvas Charts
+│   │   │   └── util/          # JalaliCalendar, TaskOperations, MediaStore & native PdfDocument
+│   │   └── res/               # Material 3 Day/Night themes, RTL XML layouts & vector drawables
+│   └── app/src/test/          # JUnit 4 tests (Jalali, TaskOperations, BackupCodec)
+├── docs/screenshots/          # Updated UI screenshots
 ├── packaging/arch/
 │   └── PKGBUILD               # Arch Linux build recipe for Rust/Tauri binary
 ├── public/                    # PWA SVG/PNG/Maskable & Apple touch icons
-├── src/
-│   ├── components/            # PlannerSidebar, WeeklyDaySection, TaskModal, ConfirmDeleteAllModal,
-│   │                          # PrintScheduleModal, PrintableWeekSheet, WeeklyProgressChart, PWA UI
-│   ├── hooks/                 # usePWAInstall, useOnlineStatus
-│   ├── types/                 # TypeScript interfaces (StudyTask, SubjectCategory)
-│   ├── utils/                 # Jalali math, tasks/trash, PDF/JSON export, Tauri bridge & 30 unit tests
-│   ├── App.tsx                # Main split-pane planner state & views
-│   └── main.tsx               # App bootstrap & Service Worker registration
-└── src-tauri/
-    ├── android-templates/     # Native Android Kotlin bridge (Download/WeeklyStudyPlanner)
-    ├── capabilities/          # Tauri v2 permission capabilities
-    ├── src/
-    │   ├── jalali.rs          # Rust Jalali/Gregorian converter + unit tests
-    │   ├── lib.rs             # Tauri commands (JSON/PDF export) & desktop/mobile entrypoint
-    │   └── main.rs            # Desktop binary entrypoint
-    ├── Cargo.toml
-    └── tauri.conf.json
+├── src/                       # Web/PWA & Desktop React + TypeScript application
+└── src-tauri/                 # Desktop Rust + Tauri v2 core (Windows, macOS, Linux)
 ```
 
 ---
