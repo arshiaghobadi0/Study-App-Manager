@@ -8,9 +8,8 @@
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
-    "build:tauri": "TAURI_BUILD=true vite build",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js src-tauri/target",
+    "clean": "rm -rf dist server.js desktop/target",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

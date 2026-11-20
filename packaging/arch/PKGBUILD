@@ -2,31 +2,33 @@
 pkgname=weekly-study-planner
 pkgver=1.0.0
 pkgrel=1
-pkgdesc="Weekly study task planner (Rust/Tauri) with Jalali/Gregorian dates, reminders, analytics, and JSON backup"
+pkgdesc="Weekly study task planner (100% Pure Rust / iced) with Jalali/Gregorian dates, reminders, analytics, PDF and JSON backup"
 arch=('x86_64')
 url="https://github.com/OWNER/REPO"
 license=('Apache-2.0')
-depends=('webkit2gtk-4.1' 'gtk3' 'libayatana-appindicator')
-makedepends=('rust' 'cargo' 'nodejs' 'npm')
+depends=('fontconfig' 'libxkbcommon' 'wayland' 'libx11' 'hicolor-icon-theme')
+makedepends=('rust' 'cargo')
 source=()
 sha256sums=()
 
 build() {
-  cd "${startdir}/../.."
-  npm install --legacy-peer-deps
-  npm install --no-save --legacy-peer-deps @tauri-apps/cli@^2
-  npx tauri icon public/pwa-512x512.png
-  npx tauri build --no-bundle
+  cd "${startdir}/../../desktop"
+  cargo build --release
+}
+
+check() {
+  cd "${startdir}/../../desktop"
+  cargo test
 }
 
 package() {
   cd "${startdir}/../.."
-  install -Dm755 "src-tauri/target/release/${pkgname}" "${pkgdir}/usr/bin/${pkgname}"
-  install -Dm644 "public/pwa-512x512.png" "${pkgdir}/usr/share/icons/hicolor/512x512/apps/${pkgname}.png"
+  install -Dm755 "desktop/target/release/${pkgname}" "${pkgdir}/usr/bin/${pkgname}"
+  install -Dm644 "desktop/assets/icon.png" "${pkgdir}/usr/share/icons/hicolor/512x512/apps/${pkgname}.png"
   install -Dm644 /dev/stdin "${pkgdir}/usr/share/applications/${pkgname}.desktop" << 'EOF'
 [Desktop Entry]
 Name=Weekly Study Planner
-Comment=Weekly study task planner with Jalali/Gregorian dates
+Comment=Weekly study task planner (Pure Rust) with Jalali/Gregorian dates
 Exec=weekly-study-planner %U
 Terminal=false
 Type=Application

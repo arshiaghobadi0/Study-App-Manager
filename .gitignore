@@ -6,8 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
-src-tauri/target/
-src-tauri/gen/
+desktop/target/
 release-*/
 android/.gradle/
 android/local.properties

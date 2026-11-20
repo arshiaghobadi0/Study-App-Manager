@@ -1,4 +1,4 @@
-name: Build and Release Multi-Platform Rust/Tauri Binaries
+name: Build and Release Multi-Platform Native Binaries (Pure Rust Desktop + Kotlin Android)
 
 on:
   push:
@@ -7,25 +7,20 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release tag name (e.g. v1.0.0)'
+        description: 'Release tag name (e.g. v1.1.0)'
         required: true
-        default: 'v1.0.1'
+        default: 'v1.1.0'
 
 permissions:
   contents: write
 
 jobs:
   build-windows:
-    name: Windows x64 (Rust/Tauri NSIS)
+    name: Windows x64 (100% Pure Rust NSIS)
     runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
 
       - name: Setup Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -33,29 +28,20 @@ jobs:
       - name: Cache Rust dependencies
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: desktop
 
-      - name: Install frontend dependencies & Tauri CLI
+      - name: Run Pure Rust unit tests
+        run: cargo test --manifest-path desktop/Cargo.toml
+
+      - name: Build Pure Rust Windows binary
+        run: cargo build --release --manifest-path desktop/Cargo.toml
+
+      - name: Build Windows NSIS installer (.exe)
         shell: bash
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci --legacy-peer-deps
-          else
-            npm install --legacy-peer-deps
-          fi
-          npm install --no-save --legacy-peer-deps @tauri-apps/cli@^2
-
-      - name: Generate app icons
-        run: npx tauri icon public/pwa-512x512.png
-
-      - name: Build Windows installer (.exe)
-        run: npx tauri build --bundles nsis
-
-      - name: Stage Windows artifact
-        shell: bash
-        run: |
+          makensis packaging/windows/installer.nsi
           mkdir -p release-windows
-          cp src-tauri/target/release/bundle/nsis/*.exe release-windows/
+          cp packaging/windows/*.exe release-windows/
           ls -lh release-windows
 
       - name: Upload Windows artifacts
@@ -65,16 +51,11 @@ jobs:
           path: release-windows/*.exe
 
   build-linux:
-    name: Linux x64 (Debian .deb, Arch .pkg.tar.zst, AppImage)
+    name: Linux x64 (Pure Rust — .deb, Arch .pkg.tar.zst, AppImage)
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
 
       - name: Setup Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -82,84 +63,103 @@ jobs:
       - name: Cache Rust dependencies
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: desktop
 
-      - name: Install Tauri Linux system dependencies
+      - name: Install Linux graphics & packaging libraries (no Node.js, no WebKit)
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
             build-essential \
-            curl \
+            pkg-config \
+            libxkbcommon-dev \
+            libwayland-dev \
+            libx11-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxrandr-dev \
+            libfontconfig1-dev \
+            libgl1-mesa-dev \
+            zstd \
             wget \
-            file \
-            libxdo-dev \
-            libssl-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            xdg-utils \
-            zstd
+            fuse
 
-      - name: Install frontend dependencies & Tauri CLI
+      - name: Run Pure Rust unit tests
+        run: cargo test --manifest-path desktop/Cargo.toml
+
+      - name: Build Pure Rust Linux binary
+        run: cargo build --release --manifest-path desktop/Cargo.toml
+
+      - name: Package Debian (.deb)
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci --legacy-peer-deps
-          else
-            npm install --legacy-peer-deps
-          fi
-          npm install --no-save --legacy-peer-deps @tauri-apps/cli@^2
-
-      - name: Generate app icons
-        run: npx tauri icon public/pwa-512x512.png
-
-      - name: Run Rust unit tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml
-
-      - name: Build Debian (.deb) and AppImage
-        env:
-          NO_STRIP: 'true'
-          APPIMAGE_EXTRACT_AND_RUN: '1'
-        run: npx tauri build --bundles deb,appimage
-
-      - name: Package Arch Linux (.pkg.tar.zst)
-        run: |
-          mkdir -p arch-pkg/usr/bin arch-pkg/usr/share/applications arch-pkg/usr/share/icons/hicolor/512x512/apps release-linux
-          install -m755 src-tauri/target/release/weekly-study-planner arch-pkg/usr/bin/weekly-study-planner
-          install -m644 public/pwa-512x512.png arch-pkg/usr/share/icons/hicolor/512x512/apps/weekly-study-planner.png
-          cat << 'EOF' > arch-pkg/usr/share/applications/weekly-study-planner.desktop
+          mkdir -p deb-pkg/DEBIAN deb-pkg/usr/bin deb-pkg/usr/share/applications deb-pkg/usr/share/icons/hicolor/512x512/apps release-linux
+          install -m755 desktop/target/release/weekly-study-planner deb-pkg/usr/bin/weekly-study-planner
+          install -m644 desktop/assets/icon.png deb-pkg/usr/share/icons/hicolor/512x512/apps/weekly-study-planner.png
+          cat << 'EOF' > deb-pkg/usr/share/applications/weekly-study-planner.desktop
           [Desktop Entry]
           Name=Weekly Study Planner
-          Comment=Weekly study task planner with Jalali/Gregorian dates
+          Comment=Weekly study task planner (Pure Rust) with Jalali/Gregorian dates
           Exec=weekly-study-planner %U
           Terminal=false
           Type=Application
           Icon=weekly-study-planner
           Categories=Education;Office;
           EOF
+          cat << 'EOF' > deb-pkg/DEBIAN/control
+          Package: weekly-study-planner
+          Version: 1.0.0
+          Section: education
+          Priority: optional
+          Architecture: amd64
+          Depends: libc6, libfontconfig1, libxkbcommon0, libx11-6
+          Maintainer: Weekly Study Planner <support@studyplanner.local>
+          Description: Weekly study task planner (100% Pure Rust / iced)
+           Offline-first weekly study task planner with Jalali and Gregorian dates,
+           reminders, weekly analytics charts, A4 PDF export, and JSON backup.
+          EOF
+          dpkg-deb --build deb-pkg release-linux/weekly-study-planner_1.0.0_amd64.deb
+
+      - name: Package Arch Linux (.pkg.tar.zst)
+        run: |
+          mkdir -p arch-pkg/usr/bin arch-pkg/usr/share/applications arch-pkg/usr/share/icons/hicolor/512x512/apps release-linux
+          install -m755 desktop/target/release/weekly-study-planner arch-pkg/usr/bin/weekly-study-planner
+          install -m644 desktop/assets/icon.png arch-pkg/usr/share/icons/hicolor/512x512/apps/weekly-study-planner.png
+          cp deb-pkg/usr/share/applications/weekly-study-planner.desktop arch-pkg/usr/share/applications/weekly-study-planner.desktop
           PKG_SIZE=$(du -sb arch-pkg/usr | awk '{print $1}')
           BUILD_DATE=$(date +%s)
           cat << EOF > arch-pkg/.PKGINFO
           pkgname = weekly-study-planner
           pkgver = 1.0.0-1
-          pkgdesc = Weekly study task planner (Rust/Tauri) with Jalali/Gregorian dates
+          pkgdesc = Weekly study task planner (100% Pure Rust / iced) with Jalali/Gregorian dates
           url = https://github.com/${{ github.repository }}
           builddate = ${BUILD_DATE}
           packager = GitHub Actions <actions@github.com>
           size = ${PKG_SIZE}
           arch = x86_64
           license = Apache-2.0
-          depend = webkit2gtk-4.1
-          depend = gtk3
-          depend = libayatana-appindicator
+          depend = fontconfig
+          depend = libxkbcommon
+          depend = wayland
+          depend = libx11
           EOF
           tar --zstd -C arch-pkg -cf release-linux/weekly-study-planner-1.0.0-1-x86_64.pkg.tar.zst .PKGINFO usr
 
-      - name: Stage Debian & AppImage artifacts
+      - name: Package Universal AppImage (.AppImage)
         run: |
-          mkdir -p release-linux
-          cp src-tauri/target/release/bundle/deb/*.deb release-linux/
-          cp src-tauri/target/release/bundle/appimage/*.AppImage release-linux/
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/512x512/apps
+          install -m755 desktop/target/release/weekly-study-planner AppDir/usr/bin/weekly-study-planner
+          install -m644 desktop/assets/icon.png AppDir/weekly-study-planner.png
+          install -m644 desktop/assets/icon.png AppDir/usr/share/icons/hicolor/512x512/apps/weekly-study-planner.png
+          cp deb-pkg/usr/share/applications/weekly-study-planner.desktop AppDir/weekly-study-planner.desktop
+          cp deb-pkg/usr/share/applications/weekly-study-planner.desktop AppDir/usr/share/applications/weekly-study-planner.desktop
+          cat << 'EOF' > AppDir/AppRun
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "${0}")")"
+          exec "${HERE}/usr/bin/weekly-study-planner" "$@"
+          EOF
+          chmod +x AppDir/AppRun
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+          chmod +x appimagetool
+          ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool AppDir release-linux/WeeklyStudyPlanner-1.0.0-x86_64.AppImage
           ls -lh release-linux
 
       - name: Upload Linux artifacts
@@ -172,7 +172,7 @@ jobs:
             release-linux/*.pkg.tar.zst
 
   build-macos:
-    name: macOS (${{ matrix.label }})
+    name: macOS (${{ matrix.label }} — 100% Pure Rust)
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -180,16 +180,13 @@ jobs:
         include:
           - label: Apple Silicon (arm64)
             target: aarch64-apple-darwin
+            arch_slug: arm64
           - label: Intel (x64)
             target: x86_64-apple-darwin
+            arch_slug: x64
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
 
       - name: Setup Rust (${{ matrix.target }})
         uses: dtolnay/rust-toolchain@stable
@@ -199,28 +196,70 @@ jobs:
       - name: Cache Rust dependencies
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: desktop
           key: ${{ matrix.target }}
 
-      - name: Install frontend dependencies & Tauri CLI
+      - name: Run Pure Rust unit tests
+        if: matrix.target == 'aarch64-apple-darwin'
+        run: cargo test --manifest-path desktop/Cargo.toml
+
+      - name: Build Pure Rust macOS binary (${{ matrix.target }})
+        run: cargo build --release --target ${{ matrix.target }} --manifest-path desktop/Cargo.toml
+
+      - name: Create macOS .app bundle and .dmg disk image
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci --legacy-peer-deps
-          else
-            npm install --legacy-peer-deps
-          fi
-          npm install --no-save --legacy-peer-deps @tauri-apps/cli@^2
+          APP_DIR="Weekly Study Planner.app"
+          mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources" release-macos
+          cp "desktop/target/${{ matrix.target }}/release/weekly-study-planner" "$APP_DIR/Contents/MacOS/weekly-study-planner"
+          chmod +x "$APP_DIR/Contents/MacOS/weekly-study-planner"
 
-      - name: Generate app icons
-        run: npx tauri icon public/pwa-512x512.png
+          # Generate .icns icon from PNG via native macOS sips + iconutil
+          mkdir -p AppIcon.iconset
+          sips -z 16 16     desktop/assets/icon.png --out AppIcon.iconset/icon_16x16.png > /dev/null
+          sips -z 32 32     desktop/assets/icon.png --out AppIcon.iconset/icon_16x16@2x.png > /dev/null
+          sips -z 32 32     desktop/assets/icon.png --out AppIcon.iconset/icon_32x32.png > /dev/null
+          sips -z 64 64     desktop/assets/icon.png --out AppIcon.iconset/icon_32x32@2x.png > /dev/null
+          sips -z 128 128   desktop/assets/icon.png --out AppIcon.iconset/icon_128x128.png > /dev/null
+          sips -z 256 256   desktop/assets/icon.png --out AppIcon.iconset/icon_128x128@2x.png > /dev/null
+          sips -z 256 256   desktop/assets/icon.png --out AppIcon.iconset/icon_256x256.png > /dev/null
+          sips -z 512 512   desktop/assets/icon.png --out AppIcon.iconset/icon_256x256@2x.png > /dev/null
+          cp desktop/assets/icon.png AppIcon.iconset/icon_512x512.png
+          iconutil -c icns AppIcon.iconset -o "$APP_DIR/Contents/Resources/AppIcon.icns"
 
-      - name: Build macOS DMG (${{ matrix.target }})
-        run: npx tauri build --target ${{ matrix.target }} --bundles dmg
+          cat << 'EOF' > "$APP_DIR/Contents/Info.plist"
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleName</key>
+            <string>Weekly Study Planner</string>
+            <key>CFBundleDisplayName</key>
+            <string>Weekly Study Planner</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.studyplanner.weekly</string>
+            <key>CFBundleVersion</key>
+            <string>1.0.0</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0.0</string>
+            <key>CFBundleExecutable</key>
+            <string>weekly-study-planner</string>
+            <key>CFBundleIconFile</key>
+            <string>AppIcon</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
 
-      - name: Stage macOS artifact
-        run: |
-          mkdir -p release-macos
-          cp "src-tauri/target/${{ matrix.target }}/release/bundle/dmg/"*.dmg release-macos/
+          mkdir -p dmg-staging
+          cp -R "$APP_DIR" dmg-staging/
+          ln -s /Applications dmg-staging/Applications
+          hdiutil create -volname "Weekly Study Planner" \
+            -srcfolder dmg-staging \
+            -ov -format UDZO \
+            "release-macos/WeeklyStudyPlanner-1.0.0-macos-${{ matrix.arch_slug }}.dmg"
           ls -lh release-macos
 
       - name: Upload macOS artifact
@@ -310,14 +349,14 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "TAG_NAME=${{ github.event.inputs.tag_name }}" >> "$GITHUB_OUTPUT"
           else
-            echo "TAG_NAME=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "TAG_NAME=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create GitHub Release & Attach Binaries
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.TAG_NAME }}
-          name: "Weekly Study Planner ${{ steps.tag.outputs.TAG_NAME }} (Rust/Tauri)"
+          name: "Weekly Study Planner ${{ steps.tag.outputs.TAG_NAME }} (Pure Rust Desktop + Kotlin Android)"
           draft: false
           prerelease: false
           generate_release_notes: true

@@ -6,9 +6,9 @@
 
 # برنامه‌ریز درسی هفتگی | Weekly Study Planner
 
-**مدیریت هوشمند و آفلاین تکالیف درسی هفتگی (شنبه تا جمعه) با رابط کاربری دوپانله مدرن، تقویم دوگانه شمسی و میلادی، ثبت تکلیف برای کل هفته، سطل بازیافت، خروجی مستقیم PDF و JSON، نمودار پیشرفت، PWA و بیلد بومی Rust (Tauri v2)**
+**مدیریت هوشمند و آفلاین تکالیف درسی هفتگی (شنبه تا جمعه) با رابط کاربری دوپانله مدرن، تقویم دوگانه شمسی و میلادی، ثبت تکلیف برای کل هفته، سطل بازیافت، خروجی مستقیم PDF و JSON، نمودار پیشرفت، PWA، نسخه دسکتاپ ۱۰۰٪ بومی با Rust (`iced`) و نسخه اندروید بومی Kotlin + XML**
 
-**A fast, offline-first Weekly Study Task Manager (Saturday–Friday) featuring a modern split-pane Reminders UI, dual Jalali & Gregorian calendars, all-week task creation, Recently Deleted trash, direct A4 PDF & JSON exports, Recharts analytics, PWA support, and native Rust/Tauri v2 builds.**
+**A fast, offline-first Weekly Study Task Manager (Saturday–Friday) featuring a modern split-pane Reminders UI, dual Jalali & Gregorian calendars, all-week task creation, Recently Deleted trash, direct A4 PDF & JSON exports, analytics charts, PWA support, a 100% Pure Rust desktop app (`iced`), and a standalone Kotlin + XML Android app.**
 
 <br />
 
@@ -18,9 +18,8 @@
 
 <br />
 
-[![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Rust](https://img.shields.io/badge/Rust-Tauri_v2-dea584?style=flat-square&logo=rust&logoColor=black)](https://v2.tauri.app/)
+[![React](https://img.shields.io/badge/Web_PWA-React_19_+_TS-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![Rust](https://img.shields.io/badge/Desktop-100%25_Pure_Rust_(iced)-dea584?style=flat-square&logo=rust&logoColor=black)](desktop/)
 [![Kotlin](https://img.shields.io/badge/Android-Kotlin_%2B_XML-7f52ff?style=flat-square&logo=kotlin&logoColor=white)](android/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06b6d4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![jsPDF](https://img.shields.io/badge/PDF-jsPDF_A4_RTL-e11d48?style=flat-square)](#)
@@ -45,18 +44,18 @@
 
 ## 🇮🇷 مستندات فارسی
 
-**برنامه‌ریز درسی هفتگی** یک اپلیکیشن سبک، سریع و کاملاً آفلاین برای برنامه‌ریزی و پیگیری تکالیف درسی در طول هفته ایرانی (**شنبه تا جمعه**) است. تمام داده‌ها به‌صورت محلی روی دستگاه شما ذخیره می‌شوند و می‌توانید از آن هم به عنوان **وب‌اپ پیشرونده (PWA)** در مرورگر و هم به عنوان **اپلیکیشن بومی Rust + Tauri v2** روی ویندوز، macOS، لینوکس و اندروید استفاده کنید.
+**برنامه‌ریز درسی هفتگی** یک اپلیکیشن سبک، سریع و کاملاً آفلاین برای برنامه‌ریزی و پیگیری تکالیف درسی در طول هفته ایرانی (**شنبه تا جمعه**) است. تمام داده‌ها به‌صورت محلی روی دستگاه شما ذخیره می‌شوند و می‌توانید از آن هم به عنوان **وب‌اپ پیشرونده (PWA)** در مرورگر، هم به عنوان **اپلیکیشن دسکتاپ ۱۰۰٪ بومی با زبان Rust** (بدون هیچ کد جاوااسکریپت، تایپ‌اسکریپت یا WebView) روی ویندوز، macOS و لینوکس، و هم به عنوان **اپلیکیشن بومی Kotlin + XML** روی اندروید استفاده کنید.
 
 <a id="whats-new-fa"></a>
 
 ### 🆕 ویژگی‌های جدید در نسخه بازطراحی‌شده
 
-- **بازطراحی کامل رابط کاربری (الهام‌گرفته از Reminders)**: چیدمان دوپانله مدرن با نوار کناری جمع‌شونده شامل ۴ کاشی آماری رنگی (**امروز**، **تکمیل‌شده**، **اولویت بالا**، **همه هفته**)، فهرست دروس با شمارنده زنده، برچسب‌های اولویت (`#فوری`، `#متوسط`، `#عادی`)، گرید ۳ ستونه روزهای هفته و دکمه شناور `+`.
+- **بازنویسی ۱۰۰٪ بومی نسخه‌های دسکتاپ با زبان Rust (`desktop/` — `iced 0.13`)**: انتقال کامل رابط کاربری، تقویم شمسی/میلادی، منطق تکالیف، نمودار بومی `Canvas`، یادآور و اعلان دسکتاپ، تنظیمات کامل، خروجی مستقیم PDF/چاپ A4 و پشتیبان‌گیری JSON به **Rust خالص** با فونت فارسی توکار `Vazirmatn` و شکل‌دهی کامل حروف فارسی (`cosmic-text` / `Shaping::Advanced`) — بدون نیاز به Node.js، جاوااسکریپت، تایپ‌اسکریپت یا WebKit2GTK/WebView2.
+- **بازطراحی خلوت و مدرن رابط کاربری + پنجره تنظیمات کامل**: چیدمان دوپانله تمیز با نوار کناری جمع‌شونده شامل ۴ کاشی آماری رنگی، فهرست دروس با شمارنده زنده، برچسب‌های اولویت، پنجره تنظیمات اختصاصی (تم روشن/تاریک، ۶ رنگ اصلی، نمایش تقویم دوگانه/تکی، تراکم کارت‌ها، پیش‌فرض تکالیف و انیمیشن‌های نرم) و نوار بالای مینیمال.
 - **ثبت تکلیف برای تمام روزهای هفته (شنبه تا جمعه)**: افزودن تیک **«ثبت برای تمام روزهای هفته (شنبه تا جمعه)»** در هر دو بخش **پنجره افزودن تکلیف** و **افزودن سریع درون‌خطی** برای ثبت هم‌زمان یک تکلیف تکراری در هر ۷ روز هفته انتخاب‌شده.
-- **دکمه «حذف همه تکالیف» با پنجره تأیید امن**: پاک‌سازی یکجای تکالیف با انتخاب دامنه (همه تکالیف یا فقط هفته جاری) و گزینه **حذف دائمی**؛ به‌صورت پیش‌فرض تکالیف به بخش **«اخیراً حذف‌شده»** منتقل می‌شوند تا در صورت نیاز قابل بازیابی باشند.
+- **حذف همه تکالیف با پنجره تأیید امن (داخل تنظیمات)**: پاک‌سازی یکجای تکالیف با انتخاب دامنه (همه تکالیف یا فقط هفته جاری) و گزینه **حذف دائمی**؛ به‌صورت پیش‌فرض تکالیف به بخش **«اخیراً حذف‌شده»** منتقل می‌شوند تا در صورت نیاز قابل بازیابی باشند.
 - **بخش «اخیراً حذف‌شده» (سطل بازیافت)**: نگهداری تکالیف حذف‌شده همراه با امکان بازیابی تکی، حذف دائمی یا خالی‌کردن کامل سطل بازیافت.
-- **نسخه کاملاً بومی و مستقل اندروید با Kotlin + XML (Material 3)**: طراحی اختصاصی و متفاوت از نسخه‌های دسکتاپ/وب با تم سبز فیروزه‌ای و کهربایی، ناوبری ۴ تب در پایین صفحه (**برنامه**، **آمار**، **دروس**، **ابزارها**)، نوار افقی ۷ روز هفته، نمودارهای بومی Canvas، اعلان زمان‌بندی‌شده `AlarmManager` و تولید PDF بومی با `PdfDocument` در پوشه `Download/WeeklyStudyPlanner` (با سازگاری ۱۰۰٪ با فایل پشتیبان JSON نسخه‌های وب و دسکتاپ).
-- **خروجی مستقیم PDF و پوشه اختصاصی اندروید/دسکتاپ**: تولید مستقیم فایل PDF چندصفحه‌ای A4 با چیدمان راست‌به‌چپ فارسی؛ در نسخه اندروید فایل‌های **PDF** و **JSON** از طریق `MediaStore.Downloads` مستقیماً در پوشه اختصاصی **`Download/WeeklyStudyPlanner`** (و در دسکتاپ در **`Downloads/WeeklyStudyPlanner`**) ذخیره می‌شوند.
+- **نسخه کاملاً بومی و مستقل اندروید با Kotlin + XML (Material 3)**: طراحی اختصاصی موبایل‌محور با تم سبز فیروزه‌ای و کهربایی، ناوبری ۴ تب در پایین صفحه، نمودارهای بومی Canvas، اعلان `AlarmManager` و تولید PDF بومی با `PdfDocument` در پوشه `Download/WeeklyStudyPlanner` (با سازگاری ۱۰۰٪ با فایل پشتیبان JSON نسخه‌های وب و دسکتاپ Rust).
 
 <a id="features-fa"></a>
 
@@ -145,47 +144,41 @@
 ### 🛠️ نصب و اجرای محلی
 
 #### پیش‌نیازها
-- **Node.js 20+** (پیشنهادی: نسخه `22`) و `npm`
-- **Rust + Cargo** (فقط برای بیلد دسکتاپ/اندروید با Tauri v2)
+- **Rust + Cargo** (برای اجرا، تست و بیلد **نسخه دسکتاپ ۱۰۰٪ بومی Rust** بدون نیاز به Node.js)
+- **Node.js 20+** (پیشنهادی: نسخه `22`) فقط برای نسخه وب/PWA
 
-#### ۱. کلون و نصب وابستگی‌ها
+#### ۱. اجرای نسخه دسکتاپ ۱۰۰٪ بومی Rust (ویندوز / لینوکس / macOS)
 ```bash
 git clone https://github.com/arshiaghobadi0/Study-App-Manager.git
 cd Study-App-Manager
-npm install --legacy-peer-deps
+
+# اجرای تست‌های واحد Rust (تقویم شمسی، تکالیف، آمار، پشتیبان JSON و خروجی PDF)
+cargo test --manifest-path desktop/Cargo.toml
+
+# اجرای برنامه دسکتاپ بومی Rust
+cargo run --release --manifest-path desktop/Cargo.toml
 ```
 
 #### ۲. اجرای نسخه وب و PWA
 ```bash
+npm install --legacy-peer-deps
 npm run dev
 # برنامه روی http://localhost:3000 اجرا می‌شود
 ```
 
-#### ۳. اجرای نسخه بومی Rust (Tauri v2)
+#### ۳. تست‌های واحد نسخه وب
 ```bash
-npm install --no-save --legacy-peer-deps @tauri-apps/cli@^2
-npx tauri dev
-```
-
-#### ۴. اجرای تست‌ها و بررسی تایپ‌ها
-```bash
-# تست‌های واحد فرانت‌اند (۳۰ تست)
 npx tsx --test src/utils/*.test.ts
-
-# بررسی تایپ‌های TypeScript
 npm run lint
-
-# تست‌های واحد Rust (تبدیل تقویم شمسی/میلادی)
-cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-#### ۵. ساخت بیلد تولیدی و انتشار خودکار در GitHub Releases
+#### ۴. ساخت بیلد تولیدی و انتشار خودکار در GitHub Releases
 ```bash
+# بیلد نسخه دسکتاپ ۱۰۰٪ بومی Rust
+cargo build --release --manifest-path desktop/Cargo.toml
+
 # بیلد وب + PWA
 npm run build
-
-# بیلد دسکتاپ محلی با Rust/Tauri
-npx tauri build
 ```
 برای اجرای خودکار تمام بیلدها و انتشار در Releases گیت‌هاب، یک تگ نسخه ایجاد و پوش کنید (یا از تب **Actions** گزینه `workflow_dispatch` را اجرا نمایید):
 ```bash
@@ -230,18 +223,17 @@ git push origin v1.1.0
 
 ## 🇬🇧 English Documentation
 
-**Weekly Study Planner** (`برنامه‌ریز درسی هفتگی`) is a streamlined, offline-first study task manager built around the Iranian 7-day week (**Saturday–Friday**). All tasks, subject categories, trash items, and theme settings persist locally on your device. It runs both as an installable **Progressive Web App (PWA)** and as a native **Rust + Tauri v2** application on Windows, macOS, Linux, and Android.
+**Weekly Study Planner** (`برنامه‌ریز درسی هفتگی`) is a streamlined, offline-first study task manager built around the Iranian 7-day week (**Saturday–Friday**). All tasks, subject categories, trash items, and settings persist locally on your device. It ships as three independent native targets: a **100% Pure Rust Desktop App (`desktop/` — `iced 0.13`, zero JS/TS/WebView)** for Windows, macOS, and Linux, a **Standalone Native Kotlin + XML Android App (`android/`)**, and an installable **Web/PWA edition (`src/`)**.
 
 <a id="whats-new-en"></a>
 
 ### 🆕 What's New in the Redesigned Release
 
-- **Modern Split-Pane Reminders UI**: Redesigned collapsible sidebar (`PlannerSidebar`) with 2×2 color-coded quick-filter tiles (**Today**, **Completed**, **High Priority**, **All Week**), live subject counts, **Recently Deleted** view, priority tags (`#فوری`, `#متوسط`, `#عادی`), a 3-column weekly board grid, and a floating `+` action button.
-- **All-Week Task Registration (Saturday–Friday)**: Added a **"Register for all days of the week (Saturday–Friday)"** checkbox inside both `TaskModal` and inline per-day quick-add (`WeeklyDaySection`) to schedule repeating tasks across all 7 days in one action.
-- **Safe "Delete All Tasks" Confirmation**: Dedicated bulk-delete button and accessible confirmation modal (`ConfirmDeleteAllModal`) supporting scope selection (all tasks vs. current week) and reversible soft-delete to Recently Deleted (with an optional permanent delete checkbox).
-- **Recently Deleted (Trash & Recovery)**: Deleted tasks move to **Recently Deleted**, where you can restore individual tasks, permanently delete items, or empty the trash.
-- **Standalone Native Android App (Kotlin + XML / Material 3)**: Purpose-built mobile-first Android edition under `android/` with a distinct Persian Teal & Warm Amber palette, 4-tab bottom navigation (**Planner**, **Analytics**, **Subjects**, **Tools**), horizontal 7-day strip, native Canvas completion ring & bar chart, `AlarmManager` notifications, and native `PdfDocument` + `MediaStore.Downloads` exports to `Download/WeeklyStudyPlanner`—100% JSON backup compatible (`schemaVersion: 1`) with Web & Desktop.
-- **Direct A4 PDF Export & Dedicated Export Folder**: Direct multi-page RTL A4 PDF export powered by `jsPDF` on Web/Desktop and native `PdfDocument` on Android, saving both **PDF** and **JSON** exports into **`Download/WeeklyStudyPlanner`** on Android and **`Downloads/WeeklyStudyPlanner`** on Tauri desktop.
+- **100% Pure Rust Desktop Rewrite (`desktop/` — `iced 0.13`)**: Complete migration of all desktop UI, Jalali/Gregorian calendar logic, task management, native Canvas analytics bar chart, reminders & desktop notifications, full Settings modal, A4 PDF/printable export, and `schemaVersion: 1` JSON backup into **pure Rust** with embedded `Vazirmatn` fonts and `cosmic-text` Persian RTL shaping—zero Node.js, zero TypeScript/JavaScript, and zero WebView/WebKit2GTK.
+- **Minimalist Split-Pane UI & Full Settings**: Airy Apple Reminders-inspired design with collapsible sidebar, 2×2 color-coded quick-filter tiles, live subject counts, priority tags, and a grouped Settings modal (Light/Dark theme, 6 accent colors, dual/single calendar mode, density, defaults, smooth animations, and data management).
+- **All-Week Task Registration (Saturday–Friday)**: Added a **"Register for all days of the week (Saturday–Friday)"** checkbox inside both task modal and inline per-day quick-add to schedule repeating tasks across all 7 days in one action.
+- **Safe "Delete All Tasks" Confirmation (inside Settings)**: Bulk-delete modal supporting scope selection (all tasks vs. current week) and reversible soft-delete to Recently Deleted (with an optional permanent delete checkbox).
+- **Standalone Native Android App (Kotlin + XML / Material 3)**: Purpose-built mobile-first Android edition under `android/` with a distinct Persian Teal & Warm Amber palette, 4-tab bottom navigation, native Canvas charts, `AlarmManager` notifications, and native `PdfDocument` exports—100% JSON backup compatible (`schemaVersion: 1`) with Desktop Rust & Web.
 
 <a id="features-en"></a>
 
@@ -322,30 +314,38 @@ Pre-built binaries for all major desktop and mobile platforms are compiled autom
 
 ### 🏗️ Architecture & Tech Stack
 
-- **Web & Desktop Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, Recharts, Lucide React, `jsPDF`, `vite-plugin-pwa`
-- **Desktop Native Core (Windows / macOS / Linux)**: Rust (Edition 2021) + Tauri v2 (`src-tauri/`)
+- **Desktop Native App (Windows / macOS / Linux)**: **100% Pure Rust** (`desktop/`, Edition 2021) + `iced 0.13` (`cosmic-text` RTL Persian shaping, Canvas charts, embedded `Vazirmatn` fonts, `chrono`, `serde_json`, pure-Rust A4 PDF 1.4 writer) — zero JS/TS/Node/WebView
 - **Android Native App**: Standalone **Kotlin + XML Views** (Material 3, ViewBinding, RecyclerView, Custom Canvas Charts, `PdfDocument`, `MediaStore.Downloads`, `AlarmManager`) under `android/`
+- **Web & PWA Edition**: React 19, TypeScript, Vite 8, Tailwind CSS v4, Recharts, `jsPDF`, `vite-plugin-pwa` under `src/`
 - **CI/CD**: Multi-platform GitHub Actions workflow (`.github/workflows/release.yml`)
 
 ```text
 Study-App-Manager/
 ├── .github/workflows/
-│   └── release.yml            # Multi-OS Rust/Tauri Desktop + Native Kotlin/XML Android CI
+│   └── release.yml            # Pure Rust Desktop (Win/Linux/macOS) + Kotlin/XML Android CI
+├── desktop/                   # 100% Pure Rust Native Desktop App (iced 0.13, zero JS/WebView)
+│   ├── Cargo.toml
+│   ├── assets/                # Embedded Vazirmatn Regular/Bold TTF + App PNG icon
+│   └── src/
+│       ├── main.rs            # Entry point, font & icon embedding, window setup
+│       ├── app.rs             # Elm-architecture state, messages, update, cached view
+│       ├── models.rs          # Domain models (schemaVersion 1 JSON compatible)
+│       ├── jalali.rs          # Jalali/Gregorian math, leap years, Iranian week + tests
+│       ├── tasks.rs           # Sorting, filtering, 7-day expansion, bulk delete, reminders + tests
+│       ├── analytics.rs       # 7-day weekly progress series + tests
+│       ├── backup.rs          # JSON export/import (Replace/Merge) + tests
+│       ├── pdf_export.rs      # Pure-Rust A4 PDF 1.4 & RTL printable sheet writer + tests
+│       ├── settings.rs        # Theme palettes, 6 accent presets, settings normalization + tests
+│       ├── storage.rs         # Atomic local OS JSON persistence
+│       ├── notifier.rs        # Native OS desktop notifications, chime, file opener
+│       └── ui/                # Sidebar, Weekly Board, Canvas Analytics Chart, 6 Modals
 ├── android/                   # Standalone Native Kotlin + XML Material 3 Android App
-│   ├── app/src/main/
-│   │   ├── java/com/studyplanner/weekly/
-│   │   │   ├── data/          # Models, SharedPreferences repo, schemaVersion 1 BackupCodec, ViewModel
-│   │   │   ├── reminder/      # AlarmManager scheduler & BroadcastReceiver notifications
-│   │   │   ├── ui/            # 4-tab Fragments, BottomSheets, Adapters & Custom Canvas Charts
-│   │   │   └── util/          # JalaliCalendar, TaskOperations, MediaStore & native PdfDocument
-│   │   └── res/               # Material 3 Day/Night themes, RTL XML layouts & vector drawables
-│   └── app/src/test/          # JUnit 4 tests (Jalali, TaskOperations, BackupCodec)
-├── docs/screenshots/          # Updated UI screenshots
-├── packaging/arch/
-│   └── PKGBUILD               # Arch Linux build recipe for Rust/Tauri binary
+├── packaging/
+│   ├── arch/PKGBUILD          # Pure Rust Arch Linux package recipe
+│   └── windows/installer.nsi  # Windows x64 NSIS installer script
+├── docs/screenshots/          # UI screenshots
 ├── public/                    # PWA SVG/PNG/Maskable & Apple touch icons
-├── src/                       # Web/PWA & Desktop React + TypeScript application
-└── src-tauri/                 # Desktop Rust + Tauri v2 core (Windows, macOS, Linux)
+└── src/                       # Web/PWA React + TypeScript application
 ```
 
 ---
@@ -355,47 +355,41 @@ Study-App-Manager/
 ### 🛠️ Local Development
 
 #### Prerequisites
-- **Node.js 20+** (recommended `22`) and `npm`
-- **Rust & Cargo** (only required for native Tauri desktop/Android builds; not needed for Web/PWA dev)
+- **Rust & Cargo** (for running, testing, and building the **100% Pure Rust desktop app**—no Node.js required)
+- **Node.js 20+** (recommended `22`) only for the Web/PWA edition
 
-#### 1. Clone & Install
+#### 1. Run & Test the 100% Pure Rust Desktop App
 ```bash
 git clone https://github.com/arshiaghobadi0/Study-App-Manager.git
 cd Study-App-Manager
-npm install --legacy-peer-deps
+
+# Run all Pure Rust unit tests
+cargo test --manifest-path desktop/Cargo.toml
+
+# Launch the native Rust desktop app
+cargo run --release --manifest-path desktop/Cargo.toml
 ```
 
 #### 2. Run Web / PWA Dev Server
 ```bash
+npm install --legacy-peer-deps
 npm run dev
 # Available at http://localhost:3000
 ```
 
-#### 3. Run Native Rust / Tauri Desktop App
+#### 3. Web Tests & Type Checking
 ```bash
-npm install --no-save --legacy-peer-deps @tauri-apps/cli@^2
-npx tauri dev
-```
-
-#### 4. Tests & Type Checking
-```bash
-# Run all 30 TypeScript utility unit tests
 npx tsx --test src/utils/*.test.ts
-
-# Run TypeScript type check
 npm run lint
-
-# Run Rust unit tests (Jalali calendar module)
-cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-#### 5. Production Build & Automated Release
+#### 4. Production Build & Automated Release
 ```bash
+# Build native Pure Rust desktop binary
+cargo build --release --manifest-path desktop/Cargo.toml
+
 # Build Web + PWA bundle
 npm run build
-
-# Build native Tauri bundle locally
-npx tauri build
 ```
 To trigger an automated multi-platform build and publish all binaries + `.sha256` checksums to GitHub Releases:
 ```bash
