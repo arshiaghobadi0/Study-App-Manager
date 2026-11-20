@@ -1,10 +1,12 @@
 import {
+  BarChart3,
   Bell,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Download,
   Menu,
+  MoreHorizontal,
   PanelRightOpen,
   Plus,
   Printer,
@@ -38,13 +40,11 @@ import {
   type ParsedBackupData,
 } from './utils/backup';
 import {
-  formatGregorianEnShort,
   formatJalaliLong,
   formatWeekSpanSummary,
   getTodayISO,
   getWeekDays,
   isoToJalali,
-  parseDateISO,
   toPersianDigits,
 } from './utils/jalali';
 import { exportSchedulePdfFile } from './utils/pdfExport';
@@ -90,6 +90,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<WorkspaceViewMode>('board');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [modalInitialDateISO, setModalInitialDateISO] = useState(() => getTodayISO());
@@ -116,11 +117,32 @@ export default function App() {
   const announcedIdsRef = useRef<Set<string>>(new Set());
   const userInteractedRef = useRef(false);
   const backupTimerRef = useRef<number | null>(null);
+  const moreMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     applyThemeToDocument(theme);
     saveTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (!moreMenuOpen) return;
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setMoreMenuOpen(false);
+      }
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMoreMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [moreMenuOpen]);
 
   useEffect(() => {
     return () => {
@@ -162,8 +184,6 @@ export default function App() {
   }, []);
 
   const todayISO = getTodayISO();
-  const todayJalali = isoToJalali(todayISO);
-  const todayGregorian = parseDateISO(todayISO);
 
   const weekDays = useMemo(() => getWeekDays(weekOffset, todayISO), [weekOffset, todayISO]);
   const weekDateISOs = useMemo(() => weekDays.map((d) => d.dateISO), [weekDays]);
@@ -256,15 +276,16 @@ export default function App() {
 
   const boardHeading = useMemo(() => {
     if (viewMode === 'trash') return 'اخیراً حذف‌شده';
+    if (viewMode === 'analytics') return 'آمار پیشرفت هفتگی';
     if (filters.onlyReminders) return 'یادآورهای فعال';
     if (filters.dateISO === todayISO) return 'تکالیف امروز';
     if (filters.subjectId !== 'all') {
       return subjectsById[filters.subjectId]?.name ?? 'برنامه درسی';
     }
-    if (filters.completion === 'completed') return 'تکمیل‌شده‌های هفته';
-    if (filters.priority === 'high') return 'تکالیف فوری و اولویت بالا';
-    if (filters.priority === 'medium') return 'تکالیف اولویت متوسط';
-    if (filters.priority === 'low') return 'تکالیف اولویت عادی';
+    if (filters.completion === 'completed') return 'تکمیل‌شده‌ها';
+    if (filters.priority === 'high') return 'اولویت بالا';
+    if (filters.priority === 'medium') return 'اولویت متوسط';
+    if (filters.priority === 'low') return 'اولویت عادی';
     return 'برنامه درسی هفتگی';
   }, [viewMode, filters, todayISO, subjectsById]);
 
@@ -664,19 +685,9 @@ export default function App() {
     }));
   };
 
-  const handleJumpToAnalytics = () => {
-    setViewMode('board');
-    window.setTimeout(() => {
-      const el = document.getElementById('analytics-section');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 50);
-  };
-
   return (
     <>
-      <div className="min-h-screen flex bg-white dark:bg-[#121214] text-zinc-900 dark:text-zinc-100 print:hidden">
+      <div className="min-h-screen flex bg-white dark:bg-[#111113] text-zinc-900 dark:text-zinc-100 print:hidden">
         <PlannerSidebar
           isOpen={sidebarOpen}
           isMobileDrawerOpen={mobileDrawerOpen}
@@ -695,19 +706,22 @@ export default function App() {
           onApplyPreset={handleApplySidebarPreset}
           onSelectSubject={handleSelectSubject}
           onSelectPriorityTag={handleSelectPriorityTag}
-          onJumpToAnalytics={handleJumpToAnalytics}
+          onOpenAnalytics={() =>
+            setViewMode((prev) => (prev === 'analytics' ? 'board' : 'analytics'))
+          }
         />
 
         <div className="flex-1 min-w-0 flex flex-col">
-          {/* Crisp Apple-style top workspace bar: compact 1-row on mobile and desktop */}
-          <header className="sticky top-0 z-30 bg-white/95 dark:bg-[#121214]/95 backdrop-blur-sm border-b border-zinc-200/70 dark:border-zinc-800/80">
-            <div className="max-w-[1180px] mx-auto px-3 sm:px-8 h-14 flex items-center justify-between gap-2 sm:gap-3">
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Ultra-minimal borderless top bar matching reference screenshot */}
+          <header className="sticky top-0 z-30 bg-white/95 dark:bg-[#111113]/95 backdrop-blur-sm">
+            <div className="max-w-[1120px] mx-auto px-4 sm:px-10 h-14 flex items-center justify-between gap-3">
+              {/* Start zone: drawer toggle + whisper-quiet week navigation arrows */}
+              <div className="flex items-center gap-1 shrink-0">
                 <button
                   type="button"
                   onClick={() => setMobileDrawerOpen(true)}
                   aria-label="باز کردن منوی دسته‌بندی‌ها"
-                  className="lg:hidden p-2 rounded-xl text-zinc-700 dark:text-zinc-200 hover:bg-[#F4F4F6] dark:hover:bg-zinc-800 transition-colors"
+                  className="lg:hidden p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   <Menu className="w-5 h-5" aria-hidden="true" />
                 </button>
@@ -718,112 +732,164 @@ export default function App() {
                     onClick={() => setSidebarOpen(true)}
                     aria-label="نمایش نوار کناری"
                     title="نمایش نوار کناری"
-                    className="hidden lg:inline-flex p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-[#F4F4F6] dark:hover:bg-zinc-800 transition-colors"
+                    className="hidden lg:inline-flex p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                   >
                     <PanelRightOpen className="w-4 h-4" aria-hidden="true" />
                   </button>
                 )}
 
-                <div
-                  className="inline-flex items-center gap-0.5 bg-[#F4F4F6] dark:bg-zinc-800/80 p-1 rounded-xl"
-                  role="group"
-                  aria-label="ناوبری هفته"
-                >
+                <div className="inline-flex items-center gap-0.5" role="group" aria-label="ناوبری هفته">
                   <button
                     type="button"
                     onClick={() => setWeekOffset((w) => w - 1)}
                     aria-label="هفته قبل"
                     title="هفته قبل"
-                    className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+                    className="p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                   >
-                    <ChevronRight className="w-4 h-4" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setWeekOffset(0)}
-                    className={`px-2 sm:px-2.5 py-1 text-xs font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 ${
-                      weekOffset === 0
-                        ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs'
-                        : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white'
-                    }`}
-                  >
-                    هفته جاری
+                    <ChevronRight className="w-[18px] h-[18px]" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setWeekOffset((w) => w + 1)}
                     aria-label="هفته بعد"
                     title="هفته بعد"
-                    className="p-1.5 rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700 transition-colors"
+                    className="p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                   >
-                    <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                    <ChevronLeft className="w-[18px] h-[18px]" aria-hidden="true" />
                   </button>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 justify-end">
-                <div className="hidden md:flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setPrintModalOpen(true)}
-                    title="چاپ / ذخیره PDF"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-zinc-700 transition-colors whitespace-nowrap shrink-0"
-                  >
-                    <Printer className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>چاپ PDF</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleExportBackup}
-                    title="پشتیبان‌گیری JSON"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-zinc-700 transition-colors whitespace-nowrap shrink-0"
-                  >
-                    <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>خروجی JSON</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setImportModalOpen(true)}
-                    title="ورودی و بازیابی JSON"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/80 dark:hover:bg-zinc-700 transition-colors whitespace-nowrap shrink-0"
-                  >
-                    <Upload className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>ورودی JSON</span>
-                  </button>
-
-                  <PWAInstallButton />
-
-                  {notificationPermission !== 'unsupported' && (
+                  {weekOffset !== 0 && (
                     <button
                       type="button"
-                      onClick={handleRequestNotification}
-                      disabled={notificationPermission === 'granted'}
-                      aria-label={
-                        notificationPermission === 'granted'
-                          ? 'اعلان مرورگر فعال است'
-                          : 'فعال‌سازی اعلان مرورگر'
-                      }
-                      title={
-                        notificationPermission === 'granted'
-                          ? 'اعلان مرورگر فعال است'
-                          : 'فعال‌سازی اعلان مرورگر'
-                      }
-                      className={`inline-flex items-center gap-1.5 p-2 rounded-xl transition-colors shrink-0 ${
-                        notificationPermission === 'granted'
-                          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 cursor-default'
-                          : 'bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200/80 dark:hover:bg-zinc-700'
-                      }`}
+                      onClick={() => setWeekOffset(0)}
+                      className="px-2.5 py-1 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors whitespace-nowrap"
                     >
-                      <Bell className="w-3.5 h-3.5" aria-hidden="true" />
+                      امروز
                     </button>
                   )}
                 </div>
+              </div>
 
-                <div className="relative flex-1 sm:flex-initial min-w-[120px] sm:w-48 md:w-52">
+              {/* End zone: 2 minimal icon controls + soft rounded search pill */}
+              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setPrintModalOpen(true)}
+                  aria-label="چاپ و خروجی PDF"
+                  title="چاپ / خروجی PDF"
+                  className="p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
+                >
+                  <Printer className="w-[17px] h-[17px]" aria-hidden="true" />
+                </button>
+
+                {/* Overflow ••• menu housing JSON backup, analytics, notifications, delete-all cleanly */}
+                <div className="relative shrink-0" ref={moreMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setMoreMenuOpen((prev) => !prev)}
+                    aria-expanded={moreMenuOpen}
+                    aria-haspopup="menu"
+                    aria-label="گزینه‌ها و ابزارهای بیشتر"
+                    title="ابزارهای بیشتر"
+                    className={`p-2 rounded-full transition-colors ${
+                      moreMenuOpen
+                        ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    <MoreHorizontal className="w-[18px] h-[18px]" aria-hidden="true" />
+                  </button>
+
+                  {moreMenuOpen && (
+                    <div
+                      role="menu"
+                      aria-label="ابزارهای برنامه"
+                      className="absolute left-0 mt-2 w-56 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-[0_12px_32px_rgba(0,0,0,0.1)] p-1.5 z-50 space-y-0.5"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMoreMenuOpen(false);
+                          setViewMode((prev) => (prev === 'analytics' ? 'board' : 'analytics'));
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-right"
+                      >
+                        <BarChart3 className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />
+                        <span>{viewMode === 'analytics' ? 'بازگشت به برنامه هفتگی' : 'نمودار پیشرفت هفتگی'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMoreMenuOpen(false);
+                          void handleExportBackup();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-right"
+                      >
+                        <Download className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />
+                        <span>خروجی پشتیبان JSON</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMoreMenuOpen(false);
+                          setImportModalOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-right"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />
+                        <span>ورودی و بازیابی JSON</span>
+                      </button>
+
+                      {notificationPermission !== 'unsupported' && (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          disabled={notificationPermission === 'granted'}
+                          onClick={() => {
+                            setMoreMenuOpen(false);
+                            void handleRequestNotification();
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-60 rounded-lg transition-colors text-right"
+                        >
+                          <Bell className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />
+                          <span>
+                            {notificationPermission === 'granted'
+                              ? 'اعلان مرورگر فعال است'
+                              : 'فعال‌سازی اعلان مرورگر'}
+                          </span>
+                        </button>
+                      )}
+
+                      <PWAInstallButton variant="menu" onAfterAction={() => setMoreMenuOpen(false)} />
+
+                      {tasks.length > 0 && (
+                        <>
+                          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setMoreMenuOpen(false);
+                              setDeleteAllModalOpen(true);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors text-right"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                            <span>حذف همه تکالیف</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative flex-1 sm:flex-initial min-w-[125px] sm:w-48 md:w-56">
                   <Search
-                    className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                    className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
                     aria-hidden="true"
                   />
                   <input
@@ -833,102 +899,41 @@ export default function App() {
                       setViewMode('board');
                       setFilters((prev) => ({ ...prev, search: e.target.value }));
                     }}
-                    placeholder="جستجو..."
+                    placeholder="جستجو"
                     aria-label="جستجو در تکالیف"
-                    className="w-full pr-8 pl-2.5 py-1.5 text-xs sm:text-sm bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 rounded-xl focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-rose-500 border border-transparent focus:border-zinc-200 dark:focus:border-zinc-700"
+                    className="w-full pr-8.5 pl-3 py-1.5 text-[13px] bg-[#F2F2F7] dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 rounded-full focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-rose-500/40 border border-transparent focus:border-zinc-200 dark:focus:border-zinc-700 transition-colors"
                   />
                 </div>
               </div>
             </div>
           </header>
 
-          <main id="top" className="flex-1 max-w-[1180px] w-full mx-auto px-4 sm:px-8 py-5 pb-24 space-y-5">
-            {/* Mobile-only compact utility action strip (non-sticky so header stays <= 56px) */}
-            <div className="flex md:hidden flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPrintModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200"
-              >
-                <Printer className="w-3.5 h-3.5" aria-hidden="true" />
-                چاپ PDF
-              </button>
-              <button
-                type="button"
-                onClick={handleExportBackup}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200"
-              >
-                <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                خروجی JSON
-              </button>
-              <button
-                type="button"
-                onClick={() => setImportModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-200"
-              >
-                <Upload className="w-3.5 h-3.5" aria-hidden="true" />
-                ورودی JSON
-              </button>
-              <PWAInstallButton />
-            </div>
-            {/* Coral Red Main Display Heading matching NEW PROJECT in reference */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <main id="top" className="flex-1 max-w-[1120px] w-full mx-auto px-4 sm:px-10 pt-3 pb-24 space-y-7">
+            {/* Airy Coral Red Main Display Title with single quiet date line */}
+            <div className="flex items-end justify-between gap-4">
               <div className="space-y-1">
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#D9443C] dark:text-[#F87171]">
+                <h1 className="text-[26px] sm:text-[30px] font-extrabold tracking-tight text-[#E14E43] dark:text-[#F87171] leading-tight">
                   {boardHeading}
                 </h1>
-                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
-                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                    {weekSpan.jalaliSpan}
-                  </span>
-                  <span aria-hidden="true">/</span>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500 flex items-center gap-2 tabular-nums">
+                  <span>{weekSpan.jalaliSpan}</span>
+                  <span aria-hidden="true">·</span>
                   <span dir="ltr" className="font-mono-nums">
                     {weekSpan.gregorianSpan}
                   </span>
-                  <span aria-hidden="true">·</span>
-                  <span>امروز: {formatJalaliLong(todayJalali)}</span>
-                  <span aria-hidden="true">·</span>
-                  <span dir="ltr" className="font-mono-nums">
-                    {formatGregorianEnShort(todayGregorian)}
-                  </span>
-                </div>
+                </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 tabular-nums shrink-0">
-                <span>
-                  کل هفته: <strong className="text-zinc-900 dark:text-zinc-100">{toPersianDigits(weeklyStats.total)}</strong>
-                </span>
-                <span aria-hidden="true">·</span>
-                <span>
-                  تکمیل‌شده: <strong className="text-emerald-700 dark:text-emerald-400">{toPersianDigits(weeklyStats.completed)}</strong>
-                </span>
-                <span aria-hidden="true">·</span>
-                <span>
-                  باقی‌مانده: <strong className="text-zinc-900 dark:text-zinc-100">{toPersianDigits(weeklyStats.pending)}</strong>
-                </span>
-
-                {(hasActiveFilters || viewMode === 'trash') && (
-                  <button
-                    type="button"
-                    onClick={resetFilters}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors whitespace-nowrap"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
-                    نمایش کل هفته
-                  </button>
-                )}
-
-                {viewMode === 'board' && tasks.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setDeleteAllModalOpen(true)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50/80 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-950/70 rounded-lg transition-colors whitespace-nowrap"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                    حذف همه تکالیف
-                  </button>
-                )}
-              </div>
+              {(hasActiveFilters || viewMode !== 'board') && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors whitespace-nowrap shrink-0"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                  بازگشت به هفته
+                </button>
+              )}
             </div>
 
             {backupFeedback && (
@@ -942,17 +947,26 @@ export default function App() {
               </p>
             )}
 
-            {viewMode === 'trash' ? (
+            {viewMode === 'analytics' ? (
+              <WeeklyProgressChart
+                summary={weeklyProgressSummary}
+                theme={theme}
+                onAddTask={() => {
+                  setViewMode('board');
+                  handleOpenNewModal(weekDays[0]?.dateISO ?? todayISO);
+                }}
+              />
+            ) : viewMode === 'trash' ? (
               <section aria-label="تکالیف اخیراً حذف‌شده" className="space-y-4">
-                <div className="flex items-center justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3">
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <div className="flex items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500">
                     موارد حذف‌شده در اینجا نگهداری می‌شوند تا در صورت نیاز بازیابی شوند.
                   </p>
                   {trashTasks.length > 0 && (
                     <button
                       type="button"
                       onClick={handleEmptyTrash}
-                      className="px-3 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors whitespace-nowrap"
+                      className="px-3 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-full transition-colors whitespace-nowrap"
                     >
                       خالی کردن سطل
                     </button>
@@ -960,34 +974,34 @@ export default function App() {
                 </div>
 
                 {trashTasks.length === 0 ? (
-                  <div className="bg-[#F4F4F6]/80 dark:bg-zinc-900/60 rounded-2xl p-10 text-center space-y-2">
-                    <Trash2 className="w-6 h-6 text-zinc-400 mx-auto" aria-hidden="true" />
-                    <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                  <div className="bg-[#F6F6F9] dark:bg-zinc-900/60 rounded-2xl p-12 text-center space-y-2">
+                    <Trash2 className="w-6 h-6 text-zinc-300 dark:text-zinc-600 mx-auto" aria-hidden="true" />
+                    <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
                       مورد حذف‌شده‌ای وجود ندارد.
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
                     {trashTasks.map((task) => {
                       const sub = subjectsById[task.subjectId];
                       return (
                         <div
                           key={task.id}
-                          className="bg-[#F2F2F7] dark:bg-zinc-800/80 rounded-xl p-3.5 flex flex-col justify-between gap-3"
+                          className="bg-[#F4F4F8] dark:bg-zinc-800/75 rounded-xl p-3.5 flex flex-col justify-between gap-3"
                         >
                           <div className="space-y-1">
-                            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                            <p className="text-[13.5px] font-medium text-zinc-900 dark:text-zinc-100">
                               {task.title}
                             </p>
                             {task.notes && (
                               <p className="text-xs text-zinc-500 dark:text-zinc-400">{task.notes}</p>
                             )}
-                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                            <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
                               {sub?.name ?? 'عمومی'} · {formatJalaliLong(isoToJalali(task.dateISO))}
                             </p>
                           </div>
 
-                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-200/70 dark:border-zinc-700/70">
+                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-200/60 dark:border-zinc-700/60">
                             <button
                               type="button"
                               onClick={() => handleRestoreFromTrash(task.id)}
@@ -1020,21 +1034,21 @@ export default function App() {
                 />
 
                 {hasActiveFilters && totalMatchingInWeek === 0 ? (
-                  <div className="bg-[#F4F4F6]/80 dark:bg-zinc-900/60 rounded-2xl p-10 text-center space-y-3">
-                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <div className="bg-[#F6F6F9] dark:bg-zinc-900/60 rounded-2xl p-12 text-center space-y-3">
+                    <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
                       در این هفته هیچ تکلیفی مطابق فیلترهای انتخاب‌شده یافت نشد.
                     </p>
                     <button
                       type="button"
                       onClick={resetFilters}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-rose-600 rounded-xl hover:bg-rose-700 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#E14E43] rounded-full hover:bg-[#CC3F35] transition-colors"
                     >
                       نمایش همه تکالیف هفته
                     </button>
                   </div>
                 ) : (
                   <div
-                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-7 gap-y-8"
+                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-9"
                     data-testid="weekly-list"
                   >
                     {visibleWeekDays.map((day) => (
@@ -1056,14 +1070,6 @@ export default function App() {
                     ))}
                   </div>
                 )}
-
-                <div className="pt-4">
-                  <WeeklyProgressChart
-                    summary={weeklyProgressSummary}
-                    theme={theme}
-                    onAddTask={() => handleOpenNewModal(weekDays[0]?.dateISO ?? todayISO)}
-                  />
-                </div>
               </>
             )}
           </main>
@@ -1075,9 +1081,9 @@ export default function App() {
           onClick={() => handleOpenNewModal(todayISO)}
           aria-label="افزودن تکلیف جدید"
           title="افزودن تکلیف جدید"
-          className="fixed bottom-6 left-6 z-40 w-12 h-12 rounded-full bg-[#E14842] hover:bg-[#C93933] text-white shadow-lg shadow-rose-600/25 inline-flex items-center justify-center transition-transform duration-150 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-rose-600 dark:focus-visible:ring-offset-zinc-950"
+          className="fixed bottom-6 left-6 z-40 w-11 h-11 rounded-full bg-[#E54D42] hover:bg-[#D13E34] text-white shadow-[0_6px_18px_rgba(229,77,66,0.34)] inline-flex items-center justify-center transition-transform duration-150 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-rose-500 dark:focus-visible:ring-offset-zinc-950"
         >
-          <Plus className="w-6 h-6" aria-hidden="true" />
+          <Plus className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
         </button>
 
         <TaskModal

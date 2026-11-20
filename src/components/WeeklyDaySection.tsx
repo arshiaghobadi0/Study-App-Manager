@@ -1,7 +1,7 @@
 import { MoreHorizontal, SlidersHorizontal } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import type { PriorityLevel, StudyTask, SubjectCategory } from '../types/study';
-import { toPersianDigits, type WeekDayInfo } from '../utils/jalali';
+import type { WeekDayInfo } from '../utils/jalali';
 import { TaskRow } from './TaskRow';
 
 interface WeeklyDaySectionProps {
@@ -42,6 +42,7 @@ export function WeeklyDaySection({
   onDeleteTask,
 }: WeeklyDaySectionProps) {
   const [title, setTitle] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [subjectId, setSubjectId] = useState(subjects[0]?.id ?? 'math');
   const [priority, setPriority] = useState<PriorityLevel>('medium');
@@ -49,8 +50,6 @@ export function WeeklyDaySection({
   const [reminderTime, setReminderTime] = useState('18:00');
   const [repeatAllWeek, setRepeatAllWeek] = useState(false);
   const [error, setError] = useState('');
-
-  const completedCount = tasks.filter((t) => t.completed).length;
 
   const handleQuickSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -72,6 +71,7 @@ export function WeeklyDaySection({
     setRepeatAllWeek(false);
     setError('');
     setOptionsOpen(false);
+    setIsFocused(false);
   };
 
   return (
@@ -80,53 +80,37 @@ export function WeeklyDaySection({
       data-testid={`day-section-${day.dateISO}`}
       className="flex flex-col min-w-0"
     >
-      {/* Column Header matching MONTH / WEEK / TODAY layout */}
-      <header className="flex items-start justify-between gap-2 pb-2.5 mb-2 border-b border-zinc-200/80 dark:border-zinc-800">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h3
-              className={`text-base font-bold tracking-tight truncate ${
-                isToday ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-900 dark:text-zinc-100'
-              }`}
-            >
-              {day.persianWeekday}
-            </h3>
-            {isToday && (
-              <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                امروز
-              </span>
-            )}
-            {tasks.length > 0 && (
-              <span className="text-xs text-zinc-400 dark:text-zinc-500 tabular-nums whitespace-nowrap">
-                {toPersianDigits(completedCount)}/{toPersianDigits(tasks.length)}
-              </span>
-            )}
-          </div>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5 mt-0.5 tabular-nums">
-            <span>{day.jalaliFormatted}</span>
-            <span aria-hidden="true">·</span>
-            <span dir="ltr" className="font-mono-nums">
-              {day.gregorianFormattedEn}
-            </span>
-          </p>
+      {/* Clean minimal 1-line column header matching MONTH / WEEK / TODAY */}
+      <header className="flex items-center justify-between gap-2 pb-2 mb-2.5 border-b border-zinc-100 dark:border-zinc-800/70">
+        <div className="flex items-baseline gap-2 min-w-0">
+          <h3
+            className={`text-[15px] font-bold tracking-tight truncate ${
+              isToday ? 'text-[#E14E43] dark:text-rose-400' : 'text-zinc-900 dark:text-zinc-100'
+            }`}
+          >
+            {day.persianWeekday}
+          </h3>
+          <span className="text-[11.5px] text-zinc-400 dark:text-zinc-500 tabular-nums truncate">
+            {day.jalaliFormatted.replace(/\s+\S+$/, '')}
+          </span>
         </div>
 
         <button
           type="button"
           onClick={() => onOpenModalForDay(day.dateISO)}
           aria-label={`افزودن با جزئیات کامل برای ${day.persianWeekday}`}
-          title="افزودن تکلیف با جزئیات کامل"
-          className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+          title={`افزودن با جزئیات برای ${day.persianWeekday}`}
+          className="p-1 rounded-md text-zinc-300 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
         >
           <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
         </button>
       </header>
 
-      {/* Stacked rounded task cards */}
+      {/* Stacked slim task rows */}
       <div className="space-y-2">
         {tasks.length === 0 && hasActiveFilters && (
           <p className="text-xs text-zinc-400 dark:text-zinc-500 py-2 px-1">
-            تکلیفی مطابق فیلترهای فعلی نیست.
+            تکلیفی یافت نشد.
           </p>
         )}
 
@@ -142,47 +126,63 @@ export function WeeklyDaySection({
           />
         ))}
 
-        {/* Blank quick-add slot at the bottom of every column matching reference screenshot */}
+        {/* Calm blank quick-add slot matching reference screenshot (whisper-quiet until focused) */}
         <form onSubmit={handleQuickSubmit} className="space-y-2">
-          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 bg-[#F2F2F7]/70 dark:bg-zinc-800/45 focus-within:bg-[#F2F2F7] dark:focus-within:bg-zinc-800 transition-colors">
+          <div
+            className={`group/slot flex items-center gap-2.5 rounded-[11px] px-3 py-2 transition-colors ${
+              isFocused || title.length > 0 || optionsOpen
+                ? 'bg-[#F0F0F5] dark:bg-zinc-800'
+                : 'bg-[#F6F6F9]/80 hover:bg-[#F2F2F7] dark:bg-zinc-800/35 dark:hover:bg-zinc-800/60'
+            }`}
+          >
             <span
-              className="w-[18px] h-[18px] rounded-full border-2 border-zinc-300 dark:border-zinc-600 shrink-0"
+              className="w-[17px] h-[17px] rounded-full border-[1.5px] border-zinc-300/90 dark:border-zinc-600 shrink-0"
               aria-hidden="true"
             />
             <input
               type="text"
               value={title}
-              onFocus={() => setOptionsOpen(true)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => {
+                if (!title.trim() && !optionsOpen) {
+                  setIsFocused(false);
+                }
+              }}
               onChange={(e) => {
                 setTitle(e.target.value);
                 if (error) setError('');
               }}
-              placeholder={`افزودن تکلیف برای ${day.persianWeekday}...`}
+              placeholder={isFocused ? `تکلیف جدید برای ${day.persianWeekday}...` : ''}
               aria-label={`افزودن سریع تکلیف برای ${day.persianWeekday}`}
-              className="flex-1 min-w-0 bg-transparent text-xs sm:text-[13px] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
+              className="flex-1 min-w-0 bg-transparent text-[13px] text-zinc-800 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none"
             />
-            <button
-              type="button"
-              onClick={() => setOptionsOpen((prev) => !prev)}
-              aria-expanded={optionsOpen}
-              aria-label={`تنظیمات افزودن سریع برای ${day.persianWeekday}`}
-              title="انتخاب درس، اولویت و یادآور"
-              className="p-1 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors shrink-0"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
-            </button>
-            {title.trim().length > 0 && (
-              <button
-                type="submit"
-                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition-colors whitespace-nowrap shrink-0"
-              >
-                ثبت
-              </button>
+
+            {(isFocused || title.length > 0 || optionsOpen) && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setOptionsOpen((prev) => !prev)}
+                  aria-expanded={optionsOpen}
+                  aria-label={`تنظیمات افزودن سریع برای ${day.persianWeekday}`}
+                  title="انتخاب درس، اولویت و یادآور"
+                  className="p-1 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors shrink-0"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+                {title.trim().length > 0 && (
+                  <button
+                    type="submit"
+                    className="px-2.5 py-0.5 text-[11px] font-semibold rounded-md bg-[#E14E43] text-white hover:bg-[#CC3F35] transition-colors whitespace-nowrap shrink-0"
+                  >
+                    ثبت
+                  </button>
+                )}
+              </>
             )}
           </div>
 
           {optionsOpen && (
-            <div className="rounded-xl bg-[#F4F4F6] dark:bg-zinc-800/70 p-2.5 space-y-2 text-xs">
+            <div className="rounded-[12px] bg-[#F4F4F7] dark:bg-zinc-800/75 p-2.5 space-y-2 text-xs">
               <div className="grid grid-cols-2 gap-1.5">
                 <select
                   value={subjectId}
@@ -246,6 +246,7 @@ export function WeeklyDaySection({
                     type="button"
                     onClick={() => {
                       setOptionsOpen(false);
+                      setIsFocused(false);
                       setError('');
                     }}
                     className="px-2 py-1 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-700 rounded-md"
@@ -254,7 +255,7 @@ export function WeeklyDaySection({
                   </button>
                   <button
                     type="submit"
-                    className="px-2.5 py-1 text-[11px] font-semibold bg-rose-600 text-white hover:bg-rose-700 rounded-md"
+                    className="px-2.5 py-1 text-[11px] font-semibold bg-[#E14E43] text-white hover:bg-[#CC3F35] rounded-md"
                   >
                     {repeatAllWeek ? 'افزودن به کل هفته' : 'افزودن'}
                   </button>

@@ -20,27 +20,28 @@ export function TaskRow({
   onEdit,
   onDelete,
 }: TaskRowProps) {
-  const accentColor = subject?.color ?? '#E14842';
+  const accentColor = subject?.color ?? '#E14E43';
 
   return (
     <div
-      className={`group rounded-xl px-3 py-2.5 transition-colors duration-150 flex items-start justify-between gap-2.5 ${
+      className={`group relative rounded-[11px] px-3 py-2.5 transition-colors duration-150 ${
         task.completed
-          ? 'bg-[#F2F2F7]/65 dark:bg-zinc-800/40'
-          : 'bg-[#F2F2F7] hover:bg-[#E8E8EE] dark:bg-zinc-800/85 dark:hover:bg-zinc-800'
+          ? 'bg-[#F5F5F8]/60 dark:bg-zinc-800/35'
+          : 'bg-[#F4F4F8] hover:bg-[#ECECF2] dark:bg-zinc-800/65 dark:hover:bg-zinc-800/95'
       }`}
     >
-      <div className="flex items-start gap-2.5 min-w-0 flex-1">
+      {/* Full-width slim row: text gets 100% width with no permanent empty gap */}
+      <div className="flex items-start gap-2.5 min-w-0">
         <button
           type="button"
           role="checkbox"
           aria-checked={task.completed}
           aria-label={`تکمیل '${task.title}'`}
           onClick={() => onToggleComplete(task.id)}
-          className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 inline-flex items-center justify-center transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-rose-500 ${
+          className={`mt-[2px] w-[17px] h-[17px] rounded-full border-[1.5px] inline-flex items-center justify-center transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-rose-500 ${
             task.completed
               ? 'border-transparent text-white'
-              : 'border-zinc-400/80 dark:border-zinc-500 bg-white/80 dark:bg-zinc-900/60 hover:border-zinc-600 dark:hover:border-zinc-300'
+              : 'border-zinc-300 dark:border-zinc-500 bg-transparent hover:border-zinc-500 dark:hover:border-zinc-300'
           }`}
           style={
             task.completed
@@ -48,20 +49,20 @@ export function TaskRow({
               : undefined
           }
         >
-          {task.completed && <Check className="w-3 h-3 stroke-[3]" aria-hidden="true" />}
+          {task.completed && <Check className="w-2.5 h-2.5 stroke-[3]" aria-hidden="true" />}
         </button>
 
         <div className="min-w-0 flex-1">
           <p
-            className={`text-[13.5px] leading-5 break-words ${
+            className={`text-[13.5px] leading-[1.45] break-words ${
               task.completed
                 ? 'line-through text-zinc-400 dark:text-zinc-500'
-                : 'text-zinc-900 dark:text-zinc-100 font-medium'
+                : 'text-zinc-800 dark:text-zinc-100 font-normal'
             }`}
           >
             {!task.completed && task.priority === 'high' && (
               <span
-                className="text-rose-600 dark:text-rose-400 font-bold me-1.5 font-mono-nums tracking-tighter"
+                className="text-[#DC4C41] dark:text-rose-400 font-bold me-1.5 font-mono-nums tracking-tighter"
                 title={PRIORITY_LABELS.high}
                 aria-label="اولویت بالا"
               >
@@ -70,7 +71,7 @@ export function TaskRow({
             )}
             {!task.completed && task.priority === 'medium' && (
               <span
-                className="text-amber-600 dark:text-amber-400 font-bold me-1.5 font-mono-nums tracking-tighter"
+                className="text-[#E08A2E] dark:text-amber-400 font-bold me-1.5 font-mono-nums tracking-tighter"
                 title={PRIORITY_LABELS.medium}
                 aria-label="اولویت متوسط"
               >
@@ -82,81 +83,78 @@ export function TaskRow({
 
           {task.notes && (
             <p
-              className={`text-xs mt-0.5 leading-relaxed break-words ${
-                task.completed ? 'text-zinc-400 dark:text-zinc-500' : 'text-zinc-500 dark:text-zinc-400'
+              className={`text-[11.5px] mt-0.5 leading-snug line-clamp-1 ${
+                task.completed ? 'text-zinc-400/80 dark:text-zinc-500' : 'text-zinc-400 dark:text-zinc-400'
               }`}
             >
               {task.notes}
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-            <span className="font-medium text-zinc-600 dark:text-zinc-300">
-              {subject?.name ?? 'عمومی'}
-            </span>
-            <span aria-hidden="true">·</span>
-            <span>{PRIORITY_LABELS[task.priority]}</span>
-            {task.reminderEnabled && (
-              <>
-                <span aria-hidden="true">·</span>
-                <span
-                  className={`inline-flex items-center gap-1 font-mono-nums ${
-                    task.completed
-                      ? 'text-zinc-400 dark:text-zinc-500'
-                      : 'text-rose-600 dark:text-rose-400 font-medium'
-                  }`}
-                >
-                  <Bell className="w-3 h-3" aria-hidden="true" />
-                  <span>{toPersianDigits(task.reminderTime)}</span>
+          <div className="flex items-center justify-between gap-2 mt-1">
+            <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500 min-w-0">
+              {subject && (
+                <span className="inline-flex items-center gap-1 truncate">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0 opacity-80"
+                    style={{ backgroundColor: subject.color }}
+                    aria-hidden="true"
+                  />
+                  <span className="truncate">{subject.name}</span>
                 </span>
-              </>
-            )}
+              )}
+              {subject && task.reminderEnabled && <span aria-hidden="true">·</span>}
+              {task.reminderEnabled && (
+                <span className="font-mono-nums shrink-0">{toPersianDigits(task.reminderTime)}</span>
+              )}
+            </div>
+
+            {/* Inline on mobile (zero overlap with title); floating hover overlay on desktop */}
+            <div className="flex items-center gap-0.5 shrink-0 lg:absolute lg:left-1.5 lg:top-1.5 lg:px-1 lg:py-0.5 lg:rounded-lg lg:bg-[#ECECF2]/95 dark:lg:bg-zinc-800/95 lg:backdrop-blur-xs lg:opacity-0 lg:pointer-events-none lg:group-hover:opacity-100 lg:group-hover:pointer-events-auto lg:group-focus-within:opacity-100 lg:group-focus-within:pointer-events-auto transition-opacity duration-150">
+              <button
+                type="button"
+                onClick={() => onToggleReminder(task.id)}
+                aria-label={
+                  task.reminderEnabled
+                    ? `خاموش کردن یادآور '${task.title}'`
+                    : `روشن کردن یادآور '${task.title}'`
+                }
+                title={task.reminderEnabled ? 'خاموش کردن یادآور' : 'روشن کردن یادآور'}
+                className={`p-1 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+                  task.reminderEnabled
+                    ? 'text-rose-500 dark:text-rose-400 hover:bg-white/80 dark:hover:bg-zinc-700'
+                    : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-white/80 dark:hover:bg-zinc-700'
+                }`}
+              >
+                {task.reminderEnabled ? (
+                  <Bell className="w-3.5 h-3.5" aria-hidden="true" />
+                ) : (
+                  <BellOff className="w-3.5 h-3.5" aria-hidden="true" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onEdit(task)}
+                aria-label={`ویرایش '${task.title}'`}
+                title="ویرایش تکلیف"
+                className="p-1 rounded-md text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-100 hover:bg-white/80 dark:hover:bg-zinc-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+              >
+                <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onDelete(task.id)}
+                aria-label={`حذف '${task.title}'`}
+                title="انتقال به اخیراً حذف‌شده"
+                className="p-1 rounded-md text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-white/80 dark:hover:bg-zinc-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
+              >
+                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="flex items-center gap-0.5 shrink-0 opacity-80 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100 transition-opacity">
-        <button
-          type="button"
-          onClick={() => onToggleReminder(task.id)}
-          aria-label={
-            task.reminderEnabled
-              ? `خاموش کردن یادآور '${task.title}'`
-              : `روشن کردن یادآور '${task.title}'`
-          }
-          title={task.reminderEnabled ? 'خاموش کردن یادآور' : 'روشن کردن یادآور'}
-          className={`p-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
-            task.reminderEnabled
-              ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-100/70 dark:hover:bg-rose-950/60'
-              : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/70 dark:hover:bg-zinc-700'
-          }`}
-        >
-          {task.reminderEnabled ? (
-            <Bell className="w-3.5 h-3.5" aria-hidden="true" />
-          ) : (
-            <BellOff className="w-3.5 h-3.5" aria-hidden="true" />
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onEdit(task)}
-          aria-label={`ویرایش '${task.title}'`}
-          title="ویرایش تکلیف"
-          className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-100 hover:bg-zinc-200/70 dark:hover:bg-zinc-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
-        >
-          <Pencil className="w-3.5 h-3.5" aria-hidden="true" />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onDelete(task.id)}
-          aria-label={`حذف '${task.title}'`}
-          title="انتقال به اخیراً حذف‌شده"
-          className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-100/70 dark:hover:bg-rose-950/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
-        >
-          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-        </button>
       </div>
     </div>
   );
