@@ -82,12 +82,15 @@ export function PrintScheduleModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 dark:bg-black/70 backdrop-blur-[2px] p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/35 dark:bg-black/65 backdrop-blur-[3px] p-4 anim-backdrop-enter"
       role="dialog"
       aria-modal="true"
       aria-labelledby="print-modal-title"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="bg-white dark:bg-[#1C1C1E] border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-white dark:bg-[#1C1C1E] border border-zinc-200/80 dark:border-zinc-800 rounded-[22px] w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden anim-modal-enter">
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
           <div>
             <h2 id="print-modal-title" className="text-base font-bold text-zinc-900 dark:text-zinc-100">

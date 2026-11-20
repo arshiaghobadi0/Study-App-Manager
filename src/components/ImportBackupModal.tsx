@@ -93,12 +93,15 @@ export function ImportBackupModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 dark:bg-black/70 backdrop-blur-[2px] p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/35 dark:bg-black/65 backdrop-blur-[3px] p-4 anim-backdrop-enter"
       role="dialog"
       aria-modal="true"
       aria-labelledby="import-modal-title"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <div className="bg-white dark:bg-[#1C1C1E] border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl">
+      <div className="bg-white dark:bg-[#1C1C1E] border border-zinc-200/80 dark:border-zinc-800 rounded-[22px] w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl anim-modal-enter">
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
           <h2 id="import-modal-title" className="text-base font-bold text-zinc-900 dark:text-zinc-100">
             دریافت و بازیابی ورودی JSON

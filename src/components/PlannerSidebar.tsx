@@ -11,6 +11,7 @@ import {
   Moon,
   PanelRightClose,
   Plus,
+  Settings,
   Sun,
   Trash2,
   X,
@@ -42,6 +43,7 @@ interface PlannerSidebarProps {
   onSelectSubject: (subjectId: string) => void;
   onSelectPriorityTag: (priority: PriorityLevel | 'all') => void;
   onOpenAnalytics: () => void;
+  onOpenSettings: () => void;
 }
 
 export function PlannerSidebar({
@@ -63,6 +65,7 @@ export function PlannerSidebar({
   onSelectSubject,
   onSelectPriorityTag,
   onOpenAnalytics,
+  onOpenSettings,
 }: PlannerSidebarProps) {
   const [tagsExpanded, setTagsExpanded] = useState(true);
 
@@ -145,6 +148,19 @@ export function PlannerSidebar({
             }`}
           >
             <BarChart3 className="w-[17px] h-[17px]" aria-hidden="true" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onOpenSettings();
+              onCloseMobileDrawer();
+            }}
+            aria-label="تنظیمات برنامه"
+            title="تنظیمات"
+            className="p-2 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+          >
+            <Settings className="w-[17px] h-[17px]" aria-hidden="true" />
           </button>
         </div>
 
@@ -366,38 +382,40 @@ export function PlannerSidebar({
             />
           </button>
 
-          {tagsExpanded && (
-            <div className="flex flex-wrap gap-1.5 px-1.5" role="group" aria-label="فیلتر بر اساس اولویت">
-              {(
-                [
-                  { value: 'all', label: 'همه برچسب‌ها' },
-                  { value: 'high', label: '#فوری' },
-                  { value: 'medium', label: '#متوسط' },
-                  { value: 'low', label: '#عادی' },
-                ] as const
-              ).map((tag) => {
-                const selected = viewMode === 'board' && filters.priority === tag.value;
-                return (
-                  <button
-                    key={tag.value}
-                    type="button"
-                    onClick={() => {
-                      onSelectPriorityTag(tag.value);
-                      onCloseMobileDrawer();
-                    }}
-                    aria-pressed={selected}
-                    className={`px-2.5 py-1 text-[11.5px] font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 ${
-                      selected
-                        ? 'bg-zinc-200/90 dark:bg-zinc-700 text-zinc-900 dark:text-white'
-                        : 'bg-[#F4F4F7] dark:bg-zinc-800/70 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800'
-                    }`}
-                  >
-                    {tag.label}
-                  </button>
-                );
-              })}
+          <div className="collapse-grid" data-open={tagsExpanded ? 'true' : 'false'}>
+            <div>
+              <div className="flex flex-wrap gap-1.5 px-1.5 pt-0.5" role="group" aria-label="فیلتر بر اساس اولویت">
+                {(
+                  [
+                    { value: 'all', label: 'همه برچسب‌ها' },
+                    { value: 'high', label: '#فوری' },
+                    { value: 'medium', label: '#متوسط' },
+                    { value: 'low', label: '#عادی' },
+                  ] as const
+                ).map((tag) => {
+                  const selected = viewMode === 'board' && filters.priority === tag.value;
+                  return (
+                    <button
+                      key={tag.value}
+                      type="button"
+                      onClick={() => {
+                        onSelectPriorityTag(tag.value);
+                        onCloseMobileDrawer();
+                      }}
+                      aria-pressed={selected}
+                      className={`px-2.5 py-1 text-[11.5px] font-medium rounded-lg transition-all duration-200 ease-smooth active:scale-[0.97] whitespace-nowrap shrink-0 ${
+                        selected
+                          ? 'bg-zinc-200/90 dark:bg-zinc-700 text-zinc-900 dark:text-white'
+                          : 'bg-[#F4F4F7] dark:bg-zinc-800/70 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/70 dark:hover:bg-zinc-800'
+                      }`}
+                    >
+                      {tag.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
@@ -415,22 +433,22 @@ export function PlannerSidebar({
         </aside>
       )}
 
-      {/* Mobile slide-over drawer */}
+      {/* Mobile slide-over drawer with smooth RTL slide animation */}
       {isMobileDrawerOpen && (
         <div
-          className="fixed inset-0 z-50 lg:hidden flex"
+          className="fixed inset-0 z-50 lg:hidden flex anim-backdrop-enter"
           role="dialog"
           aria-modal="true"
           aria-label="منوی فهرست‌ها و درس‌ها"
         >
-          <div className="w-[290px] max-w-[85vw] h-full shadow-2xl border-l border-zinc-200/80 dark:border-zinc-800 z-10">
+          <div className="w-[290px] max-w-[85vw] h-full shadow-2xl border-l border-zinc-200/80 dark:border-zinc-800 z-10 anim-drawer-enter">
             {sidebarCard}
           </div>
           <button
             type="button"
             onClick={onCloseMobileDrawer}
             aria-label="بستن منو"
-            className="flex-1 bg-zinc-950/35 backdrop-blur-[1px]"
+            className="flex-1 bg-zinc-950/35 backdrop-blur-[2px]"
           />
         </div>
       )}

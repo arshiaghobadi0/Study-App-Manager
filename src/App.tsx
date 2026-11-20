@@ -1,19 +1,14 @@
 import {
-  BarChart3,
-  Bell,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Download,
   Menu,
-  MoreHorizontal,
   PanelRightOpen,
   Plus,
   Printer,
   RotateCcw,
   Search,
   Trash2,
-  Upload,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ConfirmDeleteAllModal } from './components/ConfirmDeleteAllModal';
@@ -22,8 +17,8 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { PlannerSidebar, type WorkspaceViewMode } from './components/PlannerSidebar';
 import { PrintableWeekSheet } from './components/PrintableWeekSheet';
 import { PrintScheduleModal } from './components/PrintScheduleModal';
-import { PWAInstallButton } from './components/PWAInstallButton';
 import { ReminderBanner } from './components/ReminderBanner';
+import { SettingsModal } from './components/SettingsModal';
 import { SubjectModal } from './components/SubjectModal';
 import { TaskModal } from './components/TaskModal';
 import { WeeklyDaySection } from './components/WeeklyDaySection';
@@ -49,6 +44,13 @@ import {
 } from './utils/jalali';
 import { exportSchedulePdfFile } from './utils/pdfExport';
 import { buildPrintableWeekData, type PrintScheduleOptions } from './utils/printSchedule';
+import {
+  applySettingsToDocument,
+  DEFAULT_APP_SETTINGS,
+  loadAppSettings,
+  saveAppSettings,
+  type AppSettings,
+} from './utils/settings';
 import { playReminderChime } from './utils/sound';
 import { loadSubjects, loadTasks, loadTrash, saveSubjects, saveTasks, saveTrash } from './utils/storage';
 import {
@@ -90,7 +92,6 @@ export default function App() {
   const [viewMode, setViewMode] = useState<WorkspaceViewMode>('board');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const [taskModalOpen, setTaskModalOpen] = useState(false);
   const [modalInitialDateISO, setModalInitialDateISO] = useState(() => getTodayISO());
@@ -99,11 +100,13 @@ export default function App() {
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [printOptions, setPrintOptions] = useState<PrintScheduleOptions>({
     includeCompleted: true,
     includeNotes: true,
   });
   const [theme, setTheme] = useState<ThemeMode>(() => loadTheme());
+  const [settings, setSettings] = useState<AppSettings>(() => loadAppSettings());
   const [backupFeedback, setBackupFeedback] = useState<string | null>(null);
 
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -117,7 +120,6 @@ export default function App() {
   const announcedIdsRef = useRef<Set<string>>(new Set());
   const userInteractedRef = useRef(false);
   const backupTimerRef = useRef<number | null>(null);
-  const moreMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     applyThemeToDocument(theme);
@@ -125,24 +127,9 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (!moreMenuOpen) return;
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
-        setMoreMenuOpen(false);
-      }
-    };
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setMoreMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [moreMenuOpen]);
+    applySettingsToDocument(settings);
+    saveAppSettings(settings);
+  }, [settings]);
 
   useEffect(() => {
     return () => {
@@ -204,7 +191,7 @@ export default function App() {
       const key = `${task.id}:${task.reminderTime}:${task.snoozedUntilISO ?? ''}`;
       if (!announcedIdsRef.current.has(key)) {
         announcedIdsRef.current.add(key);
-        if (userInteractedRef.current) {
+        if (userInteractedRef.current && settings.reminderSoundEnabled) {
           playReminderChime();
         }
         if (notificationPermission === 'granted' && typeof window !== 'undefined' && 'Notification' in window) {
@@ -219,7 +206,7 @@ export default function App() {
         }
       }
     }
-  }, [dueReminders, notificationPermission, subjectsById]);
+  }, [dueReminders, notificationPermission, subjectsById, settings.reminderSoundEnabled]);
 
   const weeklyStats = useMemo(() => computeWeeklyStats(tasks, weekDateISOs), [tasks, weekDateISOs]);
   const sidebarCounts = useMemo(
@@ -230,7 +217,13 @@ export default function App() {
     () => buildWeeklyProgressSeries(weekDays, tasks),
     [weekDays, tasks],
   );
-  const filteredTasks = useMemo(() => filterTasks(tasks, filters), [tasks, filters]);
+  const filteredTasks = useMemo(() => {
+    const base = filterTasks(tasks, filters);
+    if (!settings.showCompletedTasks && filters.completion !== 'completed') {
+      return base.filter((t) => !t.completed);
+    }
+    return base;
+  }, [tasks, filters, settings.showCompletedTasks]);
 
   const hasActiveFilters =
     filters.subjectId !== 'all' ||
@@ -709,6 +702,7 @@ export default function App() {
           onOpenAnalytics={() =>
             setViewMode((prev) => (prev === 'analytics' ? 'board' : 'analytics'))
           }
+          onOpenSettings={() => setSettingsModalOpen(true)}
         />
 
         <div className="flex-1 min-w-0 flex flex-col">
@@ -769,7 +763,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* End zone: 2 minimal icon controls + soft rounded search pill */}
+              {/* End zone: minimal print icon + soft rounded search pill */}
               <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 justify-end">
                 <button
                   type="button"
@@ -780,112 +774,6 @@ export default function App() {
                 >
                   <Printer className="w-[17px] h-[17px]" aria-hidden="true" />
                 </button>
-
-                {/* Overflow ••• menu housing JSON backup, analytics, notifications, delete-all cleanly */}
-                <div className="relative shrink-0" ref={moreMenuRef}>
-                  <button
-                    type="button"
-                    onClick={() => setMoreMenuOpen((prev) => !prev)}
-                    aria-expanded={moreMenuOpen}
-                    aria-haspopup="menu"
-                    aria-label="گزینه‌ها و ابزارهای بیشتر"
-                    title="ابزارهای بیشتر"
-                    className={`p-2 rounded-full transition-colors ${
-                      moreMenuOpen
-                        ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white'
-                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                    }`}
-                  >
-                    <MoreHorizontal className="w-[18px] h-[18px]" aria-hidden="true" />
-                  </button>
-
-                  {moreMenuOpen && (
-                    <div
-                      role="menu"
-                      aria-label="ابزارهای برنامه"
-                      className="absolute left-0 mt-2 w-56 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 shadow-[0_12px_32px_rgba(0,0,0,0.1)] p-1.5 z-50 space-y-0.5"
-                    >
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setMoreMenuOpen(false);
-                          setViewMode((prev) => (prev === 'analytics' ? 'board' : 'analytics'));
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-right"
-                      >
-                        <BarChart3 className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />
-                        <span>{viewMode === 'analytics' ? 'بازگشت به برنامه هفتگی' : 'نمودار پیشرفت هفتگی'}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setMoreMenuOpen(false);
-                          void handleExportBackup();
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-right"
-                      >
-                        <Download className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />
-                        <span>خروجی پشتیبان JSON</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setMoreMenuOpen(false);
-                          setImportModalOpen(true);
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-right"
-                      >
-                        <Upload className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />
-                        <span>ورودی و بازیابی JSON</span>
-                      </button>
-
-                      {notificationPermission !== 'unsupported' && (
-                        <button
-                          type="button"
-                          role="menuitem"
-                          disabled={notificationPermission === 'granted'}
-                          onClick={() => {
-                            setMoreMenuOpen(false);
-                            void handleRequestNotification();
-                          }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-60 rounded-lg transition-colors text-right"
-                        >
-                          <Bell className="w-3.5 h-3.5 text-zinc-400 shrink-0" aria-hidden="true" />
-                          <span>
-                            {notificationPermission === 'granted'
-                              ? 'اعلان مرورگر فعال است'
-                              : 'فعال‌سازی اعلان مرورگر'}
-                          </span>
-                        </button>
-                      )}
-
-                      <PWAInstallButton variant="menu" onAfterAction={() => setMoreMenuOpen(false)} />
-
-                      {tasks.length > 0 && (
-                        <>
-                          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
-                          <button
-                            type="button"
-                            role="menuitem"
-                            onClick={() => {
-                              setMoreMenuOpen(false);
-                              setDeleteAllModalOpen(true);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors text-right"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                            <span>حذف همه تکالیف</span>
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
 
                 <div className="relative flex-1 sm:flex-initial min-w-[125px] sm:w-48 md:w-56">
                   <Search
@@ -909,18 +797,22 @@ export default function App() {
           </header>
 
           <main id="top" className="flex-1 max-w-[1120px] w-full mx-auto px-4 sm:px-10 pt-3 pb-24 space-y-7">
-            {/* Airy Coral Red Main Display Title with single quiet date line */}
+            {/* Airy Main Display Title with single quiet date line */}
             <div className="flex items-end justify-between gap-4">
               <div className="space-y-1">
-                <h1 className="text-[26px] sm:text-[30px] font-extrabold tracking-tight text-[#E14E43] dark:text-[#F87171] leading-tight">
+                <h1 className="text-[26px] sm:text-[30px] font-extrabold tracking-tight text-accent leading-tight transition-colors duration-250 ease-smooth">
                   {boardHeading}
                 </h1>
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 flex items-center gap-2 tabular-nums">
-                  <span>{weekSpan.jalaliSpan}</span>
-                  <span aria-hidden="true">·</span>
-                  <span dir="ltr" className="font-mono-nums">
-                    {weekSpan.gregorianSpan}
-                  </span>
+                  {settings.calendarDisplay !== 'gregorian' && (
+                    <span>{weekSpan.jalaliSpan}</span>
+                  )}
+                  {settings.calendarDisplay === 'dual' && <span aria-hidden="true">·</span>}
+                  {settings.calendarDisplay !== 'jalali' && (
+                    <span dir="ltr" className="font-mono-nums">
+                      {weekSpan.gregorianSpan}
+                    </span>
+                  )}
                 </p>
               </div>
 
@@ -928,7 +820,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors duration-200 whitespace-nowrap shrink-0"
                 >
                   <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
                   بازگشت به هفته
@@ -940,14 +832,15 @@ export default function App() {
               <p
                 role="status"
                 aria-live="polite"
-                className="text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5"
+                className="text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 anim-toast-enter"
               >
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 <span>{backupFeedback}</span>
               </p>
             )}
 
-            {viewMode === 'analytics' ? (
+            <div key={`${viewMode}-${weekOffset}`} className="anim-view-enter space-y-6">
+              {viewMode === 'analytics' ? (
               <WeeklyProgressChart
                 summary={weeklyProgressSummary}
                 theme={theme}
@@ -1048,7 +941,9 @@ export default function App() {
                   </div>
                 ) : (
                   <div
-                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-9"
+                    className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 ${
+                      settings.density === 'compact' ? 'gap-x-6 gap-y-6' : 'gap-x-8 gap-y-9'
+                    }`}
                     data-testid="weekly-list"
                   >
                     {visibleWeekDays.map((day) => (
@@ -1060,6 +955,7 @@ export default function App() {
                         subjects={subjects}
                         subjectsById={subjectsById}
                         hasActiveFilters={hasActiveFilters}
+                        settings={settings}
                         onQuickAdd={handleQuickAdd}
                         onOpenModalForDay={(iso) => handleOpenNewModal(iso)}
                         onToggleComplete={handleToggleComplete}
@@ -1072,16 +968,17 @@ export default function App() {
                 )}
               </>
             )}
+            </div>
           </main>
         </div>
 
-        {/* Floating Coral Red '+' FAB matching reference bottom corner button */}
+        {/* Floating Accent '+' FAB matching reference bottom corner button */}
         <button
           type="button"
           onClick={() => handleOpenNewModal(todayISO)}
           aria-label="افزودن تکلیف جدید"
           title="افزودن تکلیف جدید"
-          className="fixed bottom-6 left-6 z-40 w-11 h-11 rounded-full bg-[#E54D42] hover:bg-[#D13E34] text-white shadow-[0_6px_18px_rgba(229,77,66,0.34)] inline-flex items-center justify-center transition-transform duration-150 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-rose-500 dark:focus-visible:ring-offset-zinc-950"
+          className="fixed bottom-6 left-6 z-40 w-11 h-11 rounded-full bg-accent text-white shadow-accent inline-flex items-center justify-center transition-all duration-200 ease-spring hover:scale-108 active:scale-92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-rose-500 dark:focus-visible:ring-offset-zinc-950"
         >
           <Plus className="w-5 h-5 stroke-[2.5]" aria-hidden="true" />
         </button>
@@ -1091,8 +988,31 @@ export default function App() {
           initialDateISO={modalInitialDateISO}
           editingTask={editingTask}
           subjects={subjects}
+          defaultPriority={settings.defaultPriority}
+          defaultReminderEnabled={settings.defaultReminderEnabled}
+          defaultReminderTime={settings.defaultReminderTime}
           onClose={() => setTaskModalOpen(false)}
           onSave={handleSaveTask}
+        />
+
+        <SettingsModal
+          isOpen={settingsModalOpen}
+          settings={settings}
+          theme={theme}
+          notificationPermission={notificationPermission}
+          taskCount={tasks.length}
+          onClose={() => setSettingsModalOpen(false)}
+          onUpdateSettings={(patch) => setSettings((prev) => ({ ...prev, ...patch }))}
+          onResetSettings={() => {
+            setSettings({ ...DEFAULT_APP_SETTINGS });
+            showTimedFeedback('تنظیمات به حالت پیش‌فرض بازگردانی شد.');
+          }}
+          onChangeTheme={setTheme}
+          onRequestNotification={() => void handleRequestNotification()}
+          onOpenSubjects={() => setSubjectModalOpen(true)}
+          onExportBackup={() => void handleExportBackup()}
+          onOpenImport={() => setImportModalOpen(true)}
+          onOpenDeleteAll={() => setDeleteAllModalOpen(true)}
         />
 
         <SubjectModal

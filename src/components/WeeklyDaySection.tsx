@@ -1,7 +1,8 @@
 import { MoreHorizontal, SlidersHorizontal } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import type { PriorityLevel, StudyTask, SubjectCategory } from '../types/study';
 import type { WeekDayInfo } from '../utils/jalali';
+import type { AppSettings } from '../utils/settings';
 import { TaskRow } from './TaskRow';
 
 interface WeeklyDaySectionProps {
@@ -11,6 +12,7 @@ interface WeeklyDaySectionProps {
   subjects: SubjectCategory[];
   subjectsById: Record<string, SubjectCategory>;
   hasActiveFilters: boolean;
+  settings: AppSettings;
   onQuickAdd: (payload: {
     title: string;
     dateISO: string;
@@ -34,6 +36,7 @@ export function WeeklyDaySection({
   subjects,
   subjectsById,
   hasActiveFilters,
+  settings,
   onQuickAdd,
   onOpenModalForDay,
   onToggleComplete,
@@ -45,11 +48,18 @@ export function WeeklyDaySection({
   const [isFocused, setIsFocused] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [subjectId, setSubjectId] = useState(subjects[0]?.id ?? 'math');
-  const [priority, setPriority] = useState<PriorityLevel>('medium');
+  const [priority, setPriority] = useState<PriorityLevel>(settings.defaultPriority);
   const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderTime, setReminderTime] = useState('18:00');
+  const [reminderTime, setReminderTime] = useState(settings.defaultReminderTime);
   const [repeatAllWeek, setRepeatAllWeek] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!optionsOpen) {
+      setPriority(settings.defaultPriority);
+      setReminderTime(settings.defaultReminderTime);
+    }
+  }, [settings.defaultPriority, settings.defaultReminderTime, optionsOpen]);
 
   const handleQuickSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -74,24 +84,39 @@ export function WeeklyDaySection({
     setIsFocused(false);
   };
 
+  const jalaliShort = day.jalaliFormatted.replace(/\s+\S+$/, '');
+  const gregorianShort = day.gregorianFormattedEn.replace(/\s+\d{4}$/, '');
+
+  const dateCaption =
+    settings.calendarDisplay === 'gregorian'
+      ? gregorianShort
+      : settings.calendarDisplay === 'jalali'
+        ? jalaliShort
+        : jalaliShort;
+
   return (
     <section
       aria-label={`${day.persianWeekday} ${day.jalaliFormatted}`}
       data-testid={`day-section-${day.dateISO}`}
       className="flex flex-col min-w-0"
     >
-      {/* Clean minimal 1-line column header matching MONTH / WEEK / TODAY */}
+      {/* Clean minimal 1-line column header */}
       <header className="flex items-center justify-between gap-2 pb-2 mb-2.5 border-b border-zinc-100 dark:border-zinc-800/70">
         <div className="flex items-baseline gap-2 min-w-0">
           <h3
-            className={`text-[15px] font-bold tracking-tight truncate ${
-              isToday ? 'text-[#E14E43] dark:text-rose-400' : 'text-zinc-900 dark:text-zinc-100'
+            className={`text-[15px] font-bold tracking-tight truncate transition-colors duration-200 ${
+              isToday ? 'text-accent' : 'text-zinc-900 dark:text-zinc-100'
             }`}
           >
             {day.persianWeekday}
           </h3>
-          <span className="text-[11.5px] text-zinc-400 dark:text-zinc-500 tabular-nums truncate">
-            {day.jalaliFormatted.replace(/\s+\S+$/, '')}
+          <span
+            dir={settings.calendarDisplay === 'gregorian' ? 'ltr' : undefined}
+            className={`text-[11.5px] text-zinc-400 dark:text-zinc-500 tabular-nums truncate ${
+              settings.calendarDisplay === 'gregorian' ? 'font-mono-nums' : ''
+            }`}
+          >
+            {dateCaption}
           </span>
         </div>
 
@@ -100,14 +125,14 @@ export function WeeklyDaySection({
           onClick={() => onOpenModalForDay(day.dateISO)}
           aria-label={`افزودن با جزئیات کامل برای ${day.persianWeekday}`}
           title={`افزودن با جزئیات برای ${day.persianWeekday}`}
-          className="p-1 rounded-md text-zinc-300 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+          className="p-1 rounded-md text-zinc-300 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-200 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
         >
           <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
         </button>
       </header>
 
       {/* Stacked slim task rows */}
-      <div className="space-y-2">
+      <div className={settings.density === 'compact' ? 'space-y-1.5' : 'space-y-2'}>
         {tasks.length === 0 && hasActiveFilters && (
           <p className="text-xs text-zinc-400 dark:text-zinc-500 py-2 px-1">
             تکلیفی یافت نشد.
@@ -119,6 +144,8 @@ export function WeeklyDaySection({
             key={task.id}
             task={task}
             subject={subjectsById[task.subjectId]}
+            density={settings.density}
+            showNotes={settings.showTaskNotes}
             onToggleComplete={onToggleComplete}
             onToggleReminder={onToggleReminder}
             onEdit={onEditTask}
@@ -126,10 +153,12 @@ export function WeeklyDaySection({
           />
         ))}
 
-        {/* Calm blank quick-add slot matching reference screenshot (whisper-quiet until focused) */}
-        <form onSubmit={handleQuickSubmit} className="space-y-2">
+        {/* Calm blank quick-add slot matching reference screenshot */}
+        <form onSubmit={handleQuickSubmit} className="space-y-1.5">
           <div
-            className={`group/slot flex items-center gap-2.5 rounded-[11px] px-3 py-2 transition-colors ${
+            className={`flex items-center gap-2.5 rounded-[11px] transition-all duration-200 ease-smooth ${
+              settings.density === 'compact' ? 'px-2.5 py-1.5' : 'px-3 py-2'
+            } ${
               isFocused || title.length > 0 || optionsOpen
                 ? 'bg-[#F0F0F5] dark:bg-zinc-800'
                 : 'bg-[#F6F6F9]/80 hover:bg-[#F2F2F7] dark:bg-zinc-800/35 dark:hover:bg-zinc-800/60'
@@ -165,14 +194,14 @@ export function WeeklyDaySection({
                   aria-expanded={optionsOpen}
                   aria-label={`تنظیمات افزودن سریع برای ${day.persianWeekday}`}
                   title="انتخاب درس، اولویت و یادآور"
-                  className="p-1 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors shrink-0"
+                  className="p-1 rounded-md text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors duration-200 shrink-0"
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
                 {title.trim().length > 0 && (
                   <button
                     type="submit"
-                    className="px-2.5 py-0.5 text-[11px] font-semibold rounded-md bg-[#E14E43] text-white hover:bg-[#CC3F35] transition-colors whitespace-nowrap shrink-0"
+                    className="px-2.5 py-0.5 text-[11px] font-semibold rounded-md bg-accent text-white transition-all duration-200 active:scale-95 whitespace-nowrap shrink-0"
                   >
                     ثبت
                   </button>
@@ -181,89 +210,91 @@ export function WeeklyDaySection({
             )}
           </div>
 
-          {optionsOpen && (
-            <div className="rounded-[12px] bg-[#F4F4F7] dark:bg-zinc-800/75 p-2.5 space-y-2 text-xs">
-              <div className="grid grid-cols-2 gap-1.5">
-                <select
-                  value={subjectId}
-                  onChange={(e) => setSubjectId(e.target.value)}
-                  aria-label={`انتخاب درس برای ${day.persianWeekday}`}
-                  className="px-2 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
-                >
-                  {subjects.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {sub.name}
-                    </option>
-                  ))}
-                </select>
+          <div className="collapse-grid" data-open={optionsOpen ? 'true' : 'false'}>
+            <div>
+              <div className="rounded-[12px] bg-[#F4F4F7] dark:bg-zinc-800/75 p-2.5 space-y-2 text-xs">
+                <div className="grid grid-cols-2 gap-1.5">
+                  <select
+                    value={subjectId}
+                    onChange={(e) => setSubjectId(e.target.value)}
+                    aria-label={`انتخاب درس برای ${day.persianWeekday}`}
+                    className="px-2 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  >
+                    {subjects.map((sub) => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.name}
+                      </option>
+                    ))}
+                  </select>
 
-                <select
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value as PriorityLevel)}
-                  aria-label={`انتخاب اولویت برای ${day.persianWeekday}`}
-                  className="px-2 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
-                >
-                  <option value="high">اولویت بالا</option>
-                  <option value="medium">اولویت متوسط</option>
-                  <option value="low">اولویت عادی</option>
-                </select>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                  <label className="inline-flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={repeatAllWeek}
-                      onChange={(e) => setRepeatAllWeek(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-600 text-rose-600 focus:ring-rose-500"
-                    />
-                    تمام روزهای هفته
-                  </label>
-                  <label className="inline-flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={reminderEnabled}
-                      onChange={(e) => setReminderEnabled(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-600 text-rose-600 focus:ring-rose-500"
-                    />
-                    یادآور
-                  </label>
-                  {reminderEnabled && (
-                    <input
-                      type="time"
-                      dir="ltr"
-                      value={reminderTime}
-                      onChange={(e) => setReminderTime(e.target.value)}
-                      aria-label="ساعت یادآور"
-                      className="text-xs font-mono-nums bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-md px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-rose-500"
-                    />
-                  )}
+                  <select
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value as PriorityLevel)}
+                    aria-label={`انتخاب اولویت برای ${day.persianWeekday}`}
+                    className="px-2 py-1.5 text-xs bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  >
+                    <option value="high">اولویت بالا</option>
+                    <option value="medium">اولویت متوسط</option>
+                    <option value="low">اولویت عادی</option>
+                  </select>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOptionsOpen(false);
-                      setIsFocused(false);
-                      setError('');
-                    }}
-                    className="px-2 py-1 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-700 rounded-md"
-                  >
-                    بستن
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-2.5 py-1 text-[11px] font-semibold bg-[#E14E43] text-white hover:bg-[#CC3F35] rounded-md"
-                  >
-                    {repeatAllWeek ? 'افزودن به کل هفته' : 'افزودن'}
-                  </button>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    <label className="inline-flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={repeatAllWeek}
+                        onChange={(e) => setRepeatAllWeek(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-600 text-rose-600 focus:ring-rose-500"
+                      />
+                      تمام روزهای هفته
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={reminderEnabled}
+                        onChange={(e) => setReminderEnabled(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-zinc-300 dark:border-zinc-600 text-rose-600 focus:ring-rose-500"
+                      />
+                      یادآور
+                    </label>
+                    {reminderEnabled && (
+                      <input
+                        type="time"
+                        dir="ltr"
+                        value={reminderTime}
+                        onChange={(e) => setReminderTime(e.target.value)}
+                        aria-label="ساعت یادآور"
+                        className="text-xs font-mono-nums bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 rounded-md px-1.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOptionsOpen(false);
+                        setIsFocused(false);
+                        setError('');
+                      }}
+                      className="px-2 py-1 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-700 rounded-md transition-colors"
+                    >
+                      بستن
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-2.5 py-1 text-[11px] font-semibold bg-accent text-white rounded-md transition-all active:scale-95"
+                    >
+                      {repeatAllWeek ? 'افزودن به کل هفته' : 'افزودن'}
+                    </button>
+                  </div>
                 </div>
+                {error && <p className="text-[11px] text-rose-600 dark:text-rose-400">{error}</p>}
               </div>
-              {error && <p className="text-[11px] text-rose-600 dark:text-rose-400">{error}</p>}
             </div>
-          )}
+          </div>
         </form>
       </div>
     </section>

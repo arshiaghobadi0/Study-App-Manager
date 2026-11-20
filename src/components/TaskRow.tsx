@@ -1,11 +1,14 @@
 import { Bell, BellOff, Check, Pencil, Trash2 } from 'lucide-react';
 import type { StudyTask, SubjectCategory } from '../types/study';
 import { toPersianDigits } from '../utils/jalali';
+import type { DensityMode } from '../utils/settings';
 import { PRIORITY_LABELS } from '../utils/tasks';
 
 interface TaskRowProps {
   task: StudyTask;
   subject?: SubjectCategory;
+  density?: DensityMode;
+  showNotes?: boolean;
   onToggleComplete: (taskId: string) => void;
   onToggleReminder: (taskId: string) => void;
   onEdit: (task: StudyTask) => void;
@@ -15,16 +18,21 @@ interface TaskRowProps {
 export function TaskRow({
   task,
   subject,
+  density = 'airy',
+  showNotes = true,
   onToggleComplete,
   onToggleReminder,
   onEdit,
   onDelete,
 }: TaskRowProps) {
-  const accentColor = subject?.color ?? '#E14E43';
+  const accentColor = subject?.color ?? 'var(--accent)';
+  const isCompact = density === 'compact';
 
   return (
     <div
-      className={`group relative rounded-[11px] px-3 py-2.5 transition-colors duration-150 ${
+      className={`group relative rounded-[11px] transition-all duration-200 ease-smooth anim-task-enter ${
+        isCompact ? 'px-2.5 py-1.5' : 'px-3 py-2.5'
+      } ${
         task.completed
           ? 'bg-[#F5F5F8]/60 dark:bg-zinc-800/35'
           : 'bg-[#F4F4F8] hover:bg-[#ECECF2] dark:bg-zinc-800/65 dark:hover:bg-zinc-800/95'
@@ -38,10 +46,10 @@ export function TaskRow({
           aria-checked={task.completed}
           aria-label={`تکمیل '${task.title}'`}
           onClick={() => onToggleComplete(task.id)}
-          className={`mt-[2px] w-[17px] h-[17px] rounded-full border-[1.5px] inline-flex items-center justify-center transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-rose-500 ${
+          className={`mt-[2px] w-[17px] h-[17px] rounded-full border-[1.5px] inline-flex items-center justify-center transition-all duration-200 ease-spring active:scale-90 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-rose-500 ${
             task.completed
-              ? 'border-transparent text-white'
-              : 'border-zinc-300 dark:border-zinc-500 bg-transparent hover:border-zinc-500 dark:hover:border-zinc-300'
+              ? 'border-transparent text-white anim-check-pop'
+              : 'border-zinc-300 dark:border-zinc-500 bg-transparent hover:border-zinc-500 dark:hover:border-zinc-300 hover:scale-105'
           }`}
           style={
             task.completed
@@ -54,7 +62,7 @@ export function TaskRow({
 
         <div className="min-w-0 flex-1">
           <p
-            className={`text-[13.5px] leading-[1.45] break-words ${
+            className={`${isCompact ? 'text-[13px]' : 'text-[13.5px]'} leading-[1.45] break-words transition-colors duration-200 ${
               task.completed
                 ? 'line-through text-zinc-400 dark:text-zinc-500'
                 : 'text-zinc-800 dark:text-zinc-100 font-normal'
@@ -81,9 +89,9 @@ export function TaskRow({
             <span>{task.title}</span>
           </p>
 
-          {task.notes && (
+          {showNotes && task.notes && (
             <p
-              className={`text-[11.5px] mt-0.5 leading-snug line-clamp-1 ${
+              className={`text-[11.5px] mt-0.5 leading-snug line-clamp-1 transition-colors duration-200 ${
                 task.completed ? 'text-zinc-400/80 dark:text-zinc-500' : 'text-zinc-400 dark:text-zinc-400'
               }`}
             >
